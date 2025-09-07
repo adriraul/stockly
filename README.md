@@ -2,6 +2,8 @@
 
 Una aplicación móvil completa para gestionar tu inventario de alimentos personal, desarrollada con React Native, TypeScript y Expo.
 
+**Creado por Adrián Bravo** 🚀
+
 ## 🚀 Estado Actual
 
 ✅ **Aplicación Funcional**: La aplicación está completamente implementada y funcional
@@ -10,6 +12,8 @@ Una aplicación móvil completa para gestionar tu inventario de alimentos person
 ✅ **Lógica de Negocio**: FIFO, alertas, plantillas implementadas
 ✅ **Diseño Moderno**: UI atractiva y responsiva
 ✅ **Expo Ready**: Configurado para desarrollo con Expo
+✅ **EAS Build**: Configurado para generar APK de producción
+✅ **APK Lista**: Preparada para distribución
 
 ## 📱 Cómo Probar la Aplicación
 
@@ -103,12 +107,20 @@ StocklyApp/
 
 ## 📝 Scripts Disponibles
 
+### Desarrollo
 - `npx expo start`: Inicia el servidor de desarrollo Expo
 - `npx expo start --android`: Ejecuta en Android emulator
 - `npx expo start --ios`: Ejecuta en iOS simulator
 - `npx expo start --web`: Ejecuta en navegador web
-- `npx expo build:android`: Build de producción para Android
-- `npx expo build:ios`: Build de producción para iOS
+
+### Generación de APK
+- `eas build --platform android --profile production`: Genera APK de producción
+- `eas build --platform android --profile preview`: Genera APK de preview
+- `eas build --platform android --profile development`: Genera APK de desarrollo
+
+### Scripts Personalizados
+- `./scripts/build-apk.sh`: Script automatizado para generar APK
+- `node scripts/generate-icons.js`: Guía para generar iconos Android
 
 ## 🐛 Solución de Problemas
 
@@ -137,12 +149,41 @@ Si Metro no inicia:
 npx react-native start --reset-cache
 ```
 
-## 🚀 Próximos Pasos
+## 🚀 Generar APK de Producción
 
-1. **Probar en Web**: `npm run web`
-2. **Configurar Android**: Instalar Android Studio
-3. **Probar en Móvil**: Usar emulador o dispositivo físico
-4. **Personalizar**: Modificar colores, textos, etc.
+### Método 1: EAS Build (Recomendado)
+
+1. **Asegúrate de estar logueado**:
+   ```bash
+   eas login
+   ```
+
+2. **Generar APK de producción**:
+   ```bash
+   eas build --platform android --profile production
+   ```
+
+3. **Descargar APK**: Una vez completado, descarga el APK desde el enlace que te proporcione EAS
+
+### Método 2: Script Automatizado
+
+```bash
+chmod +x scripts/build-apk.sh
+./scripts/build-apk.sh
+```
+
+### Método 3: Build Local (Avanzado)
+
+```bash
+eas build --platform android --profile production --local
+```
+
+## 📱 Instalación en Dispositivo
+
+1. **Habilitar fuentes desconocidas** en tu Android
+2. **Transferir el APK** a tu dispositivo
+3. **Instalar** tocando el archivo APK
+4. **¡Disfrutar!** Tu app Stockly estará lista para usar
 
 ## 📞 Soporte
 

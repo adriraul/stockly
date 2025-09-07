@@ -7,6 +7,7 @@
     "icon": "./assets/stockly-logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "owner": "adriraul",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -25,6 +26,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4f52d514-b25c-4b98-9142-e160c715fc92"
+      }
     }
   }
 }
