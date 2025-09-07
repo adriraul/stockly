@@ -1,0 +1,59 @@
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  unit: "kg" | "g" | "l" | "ml" | "unidad" | "paquete";
+  minQuantity: number;
+  maxQuantity: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  expiryDate: string;
+  purchaseDate: string;
+  location: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplateItem {
+  id: string;
+  productId: string;
+  idealQuantity: number;
+  priority: "high" | "medium" | "low";
+  createdAt: string;
+  updatedAt: string;
+  // Propiedades adicionales para la UI
+  productName?: string;
+  category?: string;
+  unit?: string;
+}
+
+export interface Settings {
+  id: string;
+  key: string;
+  value: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardStats {
+  totalProducts: number;
+  totalItems: number;
+  expiringSoon: number;
+  lowStock: number;
+  recentPurchases: number;
+}
+
+export interface ShoppingListItem {
+  productId: string;
+  productName: string;
+  neededQuantity: number;
+  priority: "high" | "medium" | "low";
+  category: string;
+}
