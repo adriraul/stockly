@@ -5,14 +5,14 @@ import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Screens
-import DashboardScreen from '../screens/DashboardScreen';
-import InventoryScreen from '../screens/InventoryScreen';
-import ProductDetailScreen from '../screens/ProductDetailScreen';
-import TemplateScreen from '../screens/TemplateScreen';
-import ShoppingScreen from '../screens/ShoppingScreen';
-import ExpiryScreen from '../screens/ExpiryScreen';
-import ExportScreen from '../screens/ExportScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import DashboardScreen from '../screens/DashboardScreenSimplified';
+import InventoryScreen from '../screens/InventoryScreenSimplified';
+import ProductDetailScreen from '../screens/ProductDetailScreenSimplified';
+import TemplateScreen from '../screens/TemplateScreenSimplified';
+import ShoppingScreen from '../screens/ShoppingScreenSimplified';
+import ExpiryScreen from '../screens/ExpiryScreenSimplified';
+import ExportScreen from '../screens/ExportScreenSimplified';
+import SettingsScreen from '../screens/SettingsScreenSimplified';
 
 export type RootStackParamList = {
   Dashboard: undefined;

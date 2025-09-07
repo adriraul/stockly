@@ -4,50 +4,40 @@ import { TemplateItem } from '../../types';
 export class TemplateRepository {
   async getAll(): Promise<TemplateItem[]> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT t.*, p.name as productName, p.category, p.unit 
+    const results = await db.getAllAsync(
+      `SELECT t.*, p.name as productName, p.category 
        FROM template t 
        JOIN products p ON t.productId = p.id 
        ORDER BY t.priority DESC, p.name ASC`,
     );
 
-    const items: TemplateItem[] = [];
-    for (let i = 0; i < results.rows.length; i++) {
-      items.push(results.rows.item(i));
-    }
-    return items;
+    return results as TemplateItem[];
   }
 
   async getById(id: string): Promise<TemplateItem | null> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT t.*, p.name as productName, p.category, p.unit 
+    const result = await db.getFirstAsync(
+      `SELECT t.*, p.name as productName, p.category 
        FROM template t 
        JOIN products p ON t.productId = p.id 
        WHERE t.id = ?`,
       [id],
     );
 
-    if (results.rows.length > 0) {
-      return results.rows.item(0);
-    }
-    return null;
+    return (result as TemplateItem) || null;
   }
 
   async getByProductId(productId: string): Promise<TemplateItem | null> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT t.*, p.name as productName, p.category, p.unit 
+    const result = await db.getFirstAsync(
+      `SELECT t.*, p.name as productName, p.category 
        FROM template t 
        JOIN products p ON t.productId = p.id 
        WHERE t.productId = ?`,
       [productId],
     );
 
-    if (results.rows.length > 0) {
-      return results.rows.item(0);
-    }
-    return null;
+    return (result as TemplateItem) || null;
   }
 
   async create(
@@ -100,8 +90,8 @@ export class TemplateRepository {
     priority: 'high' | 'medium' | 'low',
   ): Promise<TemplateItem[]> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT t.*, p.name as productName, p.category, p.unit 
+    const results = await db.getAllAsync(
+      `SELECT t.*, p.name as productName, p.category 
        FROM template t 
        JOIN products p ON t.productId = p.id 
        WHERE t.priority = ? 
@@ -109,11 +99,7 @@ export class TemplateRepository {
       [priority],
     );
 
-    const items: TemplateItem[] = [];
-    for (let i = 0; i < results.rows.length; i++) {
-      items.push(results.rows.item(i));
-    }
-    return items;
+    return results as TemplateItem[];
   }
 }
 

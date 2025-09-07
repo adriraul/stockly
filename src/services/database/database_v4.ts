@@ -5,10 +5,10 @@ class DatabaseService {
 
   async init(): Promise<void> {
     try {
-      console.log('OPEN database: StocklyDB_v2.db');
-      this.db = await SQLite.openDatabaseAsync('StocklyDB_v2.db');
+      console.log('OPEN database: StocklyDB_v4.db');
+      this.db = await SQLite.openDatabaseAsync('StocklyDB_v4.db');
       console.log(
-        'SQLite.open({"name":"StocklyDB_v2.db","location":"default","dblocation":"nosync"})',
+        'SQLite.open({"name":"StocklyDB_v4.db","location":"default","dblocation":"nosync"})',
       );
 
       await this.createTables();
@@ -27,20 +27,11 @@ class DatabaseService {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-      );
-    `;
-
-    const createInventoryTable = `
-      CREATE TABLE IF NOT EXISTS inventory (
-        id TEXT PRIMARY KEY,
-        productId TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
+        description TEXT,
+        currentStock INTEGER DEFAULT 0,
         expiryDate TEXT,
         createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
+        updatedAt TEXT NOT NULL
       );
     `;
 
@@ -48,10 +39,22 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS template (
         id TEXT PRIMARY KEY,
         productId TEXT NOT NULL,
-        idealQuantity INTEGER NOT NULL,
-        priority TEXT NOT NULL,
+        idealQuantity INTEGER NOT NULL DEFAULT 0,
+        priority TEXT NOT NULL CHECK (priority IN ('high', 'medium', 'low')),
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
+        FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
+      );
+    `;
+
+    const createStockMovementsTable = `
+      CREATE TABLE IF NOT EXISTS stock_movements (
+        id TEXT PRIMARY KEY,
+        productId TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('add', 'remove', 'expired')),
+        quantity INTEGER NOT NULL,
+        reason TEXT,
+        createdAt TEXT NOT NULL,
         FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
       );
     `;
@@ -67,8 +70,8 @@ class DatabaseService {
     `;
 
     await this.db.execAsync(createProductsTable);
-    await this.db.execAsync(createInventoryTable);
     await this.db.execAsync(createTemplateTable);
+    await this.db.execAsync(createStockMovementsTable);
     await this.db.execAsync(createSettingsTable);
 
     // Insert default settings

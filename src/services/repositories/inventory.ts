@@ -5,7 +5,7 @@ export class InventoryRepository {
   async getAll(): Promise<InventoryItem[]> {
     const db = databaseService.getDatabase();
     const results = await db.getAllAsync(
-      `SELECT i.*, p.name as productName, p.category, p.unit 
+      `SELECT i.*, p.name as productName, p.category 
        FROM inventory i 
        JOIN products p ON i.productId = p.id 
        ORDER BY i.expiryDate ASC, p.name ASC`,
@@ -15,24 +15,21 @@ export class InventoryRepository {
 
   async getById(id: string): Promise<InventoryItem | null> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT i.*, p.name as productName, p.category, p.unit 
+    const result = await db.getFirstAsync(
+      `SELECT i.*, p.name as productName, p.category 
        FROM inventory i 
        JOIN products p ON i.productId = p.id 
        WHERE i.id = ?`,
       [id],
     );
 
-    if (results.rows.length > 0) {
-      return results.rows.item(0);
-    }
-    return null;
+    return (result as InventoryItem) || null;
   }
 
   async getByProductId(productId: string): Promise<InventoryItem[]> {
     const db = databaseService.getDatabase();
-    const [results] = await db.runAsync(
-      `SELECT i.*, p.name as productName, p.category, p.unit 
+    const results = await db.getAllAsync(
+      `SELECT i.*, p.name as productName, p.category 
        FROM inventory i 
        JOIN products p ON i.productId = p.id 
        WHERE i.productId = ? 
@@ -40,11 +37,7 @@ export class InventoryRepository {
       [productId],
     );
 
-    const items: InventoryItem[] = [];
-    for (let i = 0; i < results.rows.length; i++) {
-      items.push(results.rows.item(i));
-    }
-    return items;
+    return results as InventoryItem[];
   }
 
   async create(
@@ -57,19 +50,9 @@ export class InventoryRepository {
     const now = new Date().toISOString();
 
     await db.runAsync(
-      `INSERT INTO inventory (id, productId, quantity, expiryDate, purchaseDate, location, notes, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        item.productId,
-        item.quantity,
-        item.expiryDate,
-        item.purchaseDate,
-        item.location,
-        item.notes || '',
-        now,
-        now,
-      ],
+      `INSERT INTO inventory (id, productId, quantity, expiryDate, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, item.productId, item.quantity, item.expiryDate || null, now, now],
     );
 
     return id;
@@ -105,7 +88,7 @@ export class InventoryRepository {
     const futureDateStr = futureDate.toISOString().split('T')[0];
 
     const results = await db.getAllAsync(
-      `SELECT i.*, p.name as productName, p.category, p.unit 
+      `SELECT i.*, p.name as productName, p.category 
        FROM inventory i 
        JOIN products p ON i.productId = p.id 
        WHERE i.expiryDate <= ? AND i.quantity > 0
@@ -121,13 +104,12 @@ export class InventoryRepository {
   > {
     const db = databaseService.getDatabase();
     const results = await db.getAllAsync(
-      `SELECT i.*, p.name as productName, p.category, p.unit, p.minQuantity, p.maxQuantity,
+      `SELECT i.*, p.name as productName, p.category,
               SUM(i.quantity) as totalQuantity
        FROM inventory i 
        JOIN products p ON i.productId = p.id 
        WHERE i.quantity > 0
        GROUP BY i.productId
-       HAVING totalQuantity <= p.minQuantity
        ORDER BY p.name ASC`,
     );
 

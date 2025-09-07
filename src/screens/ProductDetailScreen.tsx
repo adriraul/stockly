@@ -1,26 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Modal,
-} from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Badge } from '../components/Badge';
-import { QuantityStepper } from '../components/QuantityStepper';
+import { Modal } from '../components/Modal';
 import { productsRepository } from '../services/repositories/products';
 import { inventoryRepository } from '../services/repositories/inventory';
 import { businessLogicService } from '../services/businessLogic';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 import { Product, InventoryItem } from '../types';
 
-type ProductDetailScreenRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
+type ProductDetailScreenRouteProp = RouteProp<
+  RootStackParamList,
+  'ProductDetail'
+>;
 
 const ProductDetailScreen: React.FC = () => {
   const route = useRoute<ProductDetailScreenRouteProp>();
@@ -41,7 +38,7 @@ const ProductDetailScreen: React.FC = () => {
 
   useFocusEffect(() => {
     loadProductData();
-  }, [productId]);
+  });
 
   const loadProductData = async () => {
     try {
@@ -70,7 +67,10 @@ const ProductDetailScreen: React.FC = () => {
       }
 
       if (!expiryDate || !purchaseDate) {
-        Alert.alert('Error', 'Debes especificar las fechas de compra y caducidad');
+        Alert.alert(
+          'Error',
+          'Debes especificar las fechas de compra y caducidad',
+        );
         return;
       }
 
@@ -93,7 +93,10 @@ const ProductDetailScreen: React.FC = () => {
     }
   };
 
-  const handleConsume = async (inventoryId: string, consumeQuantity: number) => {
+  const handleConsume = async (
+    inventoryId: string,
+    consumeQuantity: number,
+  ) => {
     try {
       await businessLogicService.consumeProduct(productId, consumeQuantity);
       Alert.alert('Éxito', 'Producto consumido');
@@ -124,7 +127,7 @@ const ProductDetailScreen: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -138,9 +141,12 @@ const ProductDetailScreen: React.FC = () => {
 
   const getExpiryStatus = (expiryDate: string) => {
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
-    if (daysUntilExpiry < 0) return { text: 'Caducado', variant: 'danger' as const };
-    if (daysUntilExpiry <= 3) return { text: `${daysUntilExpiry} días`, variant: 'warning' as const };
-    if (daysUntilExpiry <= 7) return { text: `${daysUntilExpiry} días`, variant: 'info' as const };
+    if (daysUntilExpiry < 0)
+      return { text: 'Caducado', variant: 'danger' as const };
+    if (daysUntilExpiry <= 3)
+      return { text: `${daysUntilExpiry} días`, variant: 'warning' as const };
+    if (daysUntilExpiry <= 7)
+      return { text: `${daysUntilExpiry} días`, variant: 'info' as const };
     return { text: `${daysUntilExpiry} días`, variant: 'success' as const };
   };
 
@@ -175,7 +181,9 @@ const ProductDetailScreen: React.FC = () => {
         </View>
         <View style={styles.stockInfo}>
           <Text style={styles.stockLabel}>Stock actual:</Text>
-          <Text style={styles.stockValue}>{getTotalQuantity()} {product.unit}</Text>
+          <Text style={styles.stockValue}>
+            {getTotalQuantity()} {product.unit}
+          </Text>
         </View>
         <View style={styles.rangeInfo}>
           <Text style={styles.rangeText}>
@@ -206,7 +214,7 @@ const ProductDetailScreen: React.FC = () => {
         {inventoryItems.length === 0 ? (
           <Text style={styles.emptyText}>No hay items en el inventario</Text>
         ) : (
-          inventoryItems.map((item) => {
+          inventoryItems.map(item => {
             const expiryStatus = getExpiryStatus(item.expiryDate);
             return (
               <View key={item.id} style={styles.inventoryItem}>
@@ -214,7 +222,10 @@ const ProductDetailScreen: React.FC = () => {
                   <Text style={styles.itemQuantity}>
                     {item.quantity} {product.unit}
                   </Text>
-                  <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
+                  <Badge
+                    text={expiryStatus.text}
+                    variant={expiryStatus.variant}
+                  />
                 </View>
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemLocation}>📍 {item.location}</Text>
@@ -253,16 +264,17 @@ const ProductDetailScreen: React.FC = () => {
       {/* Add to Inventory Modal */}
       <Modal
         visible={showAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
+        onClose={() => {
+          setShowAddModal(false);
+          resetForm();
+        }}
+        title="Agregar al Inventario"
       >
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Agregar al Inventario</Text>
-          
+        <View style={styles.modalForm}>
           <Input
             label="Cantidad"
             value={quantity.toString()}
-            onChangeText={(text) => setQuantity(parseFloat(text) || 0)}
+            onChangeText={text => setQuantity(parseFloat(text) || 0)}
             keyboardType="numeric"
           />
 
@@ -465,17 +477,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 20,
-    textAlign: 'center',
+  modalForm: {
+    gap: 16,
   },
   modalActions: {
     flexDirection: 'row',

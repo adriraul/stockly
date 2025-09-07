@@ -14,24 +14,29 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { AddProductModal } from '../components/AddProductModal';
 import { inventoryRepository } from '../services/repositories/inventory';
 import { productsRepository } from '../services/repositories/products';
 import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { InventoryItem } from '../types';
 
-type InventoryScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Inventory'>;
+type InventoryScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'Inventory'
+>;
 
 const InventoryScreen: React.FC = () => {
   const navigation = useNavigation<InventoryScreenNavigationProp>();
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       loadInventory();
-    }, [])
+    }, []),
   );
 
   const loadInventory = async () => {
@@ -53,15 +58,21 @@ const InventoryScreen: React.FC = () => {
   };
 
   const handleAddProduct = () => {
-    // TODO: Implementar modal de agregar producto
-    Alert.alert('Próximamente', 'Función de agregar producto en desarrollo');
+    setShowAddModal(true);
+  };
+
+  const handleProductAdded = () => {
+    loadInventory();
   };
 
   const handleItemPress = (item: InventoryItem) => {
     navigation.navigate('ProductDetail', { productId: item.productId });
   };
 
-  const getExpiryStatus = (expiryDate: string) => {
+  const getExpiryStatus = (expiryDate?: string) => {
+    if (!expiryDate) {
+      return { text: 'Sin fecha', variant: 'default' as const };
+    }
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
     if (daysUntilExpiry < 0)
       return { text: 'Caducado', variant: 'danger' as const };
@@ -83,18 +94,15 @@ const InventoryScreen: React.FC = () => {
             <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
           </View>
           <View style={styles.itemDetails}>
-            <Text style={styles.itemQuantity}>
-              {item.quantity} {item.unit}
-            </Text>
-            <Text style={styles.itemLocation}>📍 {item.location}</Text>
+            <Text style={styles.itemQuantity}>{item.quantity} unidades</Text>
+            <Text style={styles.itemCategory}>📂 {item.category}</Text>
           </View>
           <View style={styles.itemFooter}>
-            <Text style={styles.itemDate}>
-              Comprado: {new Date(item.purchaseDate).toLocaleDateString()}
-            </Text>
-            <Text style={styles.itemExpiry}>
-              Caduca: {new Date(item.expiryDate).toLocaleDateString()}
-            </Text>
+            {item.expiryDate && (
+              <Text style={styles.itemExpiry}>
+                Caduca: {new Date(item.expiryDate).toLocaleDateString()}
+              </Text>
+            )}
           </View>
         </Card>
       </TouchableOpacity>
@@ -146,6 +154,12 @@ const InventoryScreen: React.FC = () => {
         ListEmptyComponent={renderEmptyState}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+      />
+
+      <AddProductModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onProductAdded={handleProductAdded}
       />
     </View>
   );
@@ -204,7 +218,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0369a1',
   },
-  itemLocation: {
+  itemCategory: {
     fontSize: 12,
     color: '#64748b',
   },
@@ -212,10 +226,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  itemDate: {
-    fontSize: 12,
-    color: '#9ca3af',
   },
   itemExpiry: {
     fontSize: 12,

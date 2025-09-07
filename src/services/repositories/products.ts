@@ -30,18 +30,9 @@ export class ProductsRepository {
     const now = new Date().toISOString();
 
     await db.runAsync(
-      `INSERT INTO products (id, name, category, unit, minQuantity, maxQuantity, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        product.name,
-        product.category,
-        product.unit,
-        product.minQuantity,
-        product.maxQuantity,
-        now,
-        now,
-      ],
+      `INSERT INTO products (id, name, category, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, product.name, product.category, now, now],
     );
 
     return id;
