@@ -7,6 +7,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
 import { StatCard } from '../components/StatCard';
+import { Logo } from '../components/Logo';
 import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
@@ -115,7 +116,7 @@ export default function DashboardScreen({ navigation }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>🥩 Stockly</Text>
+          <Logo size={80} style={styles.logo} />
           <Text style={styles.subtitle}>
             Tu asistente de inventario inteligente
           </Text>
@@ -130,7 +131,7 @@ export default function DashboardScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>🥩 Stockly</Text>
+        <Logo size={80} style={styles.logo} />
         <Text style={styles.subtitle}>
           Tu asistente de inventario inteligente
         </Text>
@@ -292,11 +293,9 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.neutral[200],
     ...theme.shadows.sm,
   },
-  title: {
-    fontSize: theme.typography.fontSize['2xl'],
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
-    textAlign: 'center',
+  logo: {
+    alignSelf: 'center',
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     fontSize: theme.typography.fontSize.sm,

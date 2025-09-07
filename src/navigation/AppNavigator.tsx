@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar } from 'react-native';
+import { StatusBar, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 
@@ -55,10 +55,11 @@ const AppNavigator: React.FC = () => {
             name="Dashboard"
             component={DashboardScreen}
             options={{
-              title: '🥩 STOCKLY',
+              title: '🥩 Stockly',
               headerStyle: {
                 backgroundColor: theme.colors.primary[600],
               },
+              headerTitleAlign: 'center',
             }}
           />
           <Stack.Screen
