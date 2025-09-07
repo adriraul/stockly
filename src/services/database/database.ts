@@ -5,10 +5,10 @@ class DatabaseService {
 
   async init(): Promise<void> {
     try {
-      console.log('OPEN database: StocklyDB_v2.db');
-      this.db = await SQLite.openDatabaseAsync('StocklyDB_v2.db');
+      console.log('OPEN database: StocklyDB.db');
+      this.db = await SQLite.openDatabaseAsync('StocklyDB.db');
       console.log(
-        'SQLite.open({"name":"StocklyDB_v2.db","location":"default","dblocation":"nosync"})',
+        'SQLite.open({"name":"StocklyDB.db","location":"default","dblocation":"nosync"})',
       );
 
       await this.createTables();
@@ -22,25 +22,29 @@ class DatabaseService {
   private async createTables(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
+    // Verificar si la tabla products tiene la estructura correcta
+    try {
+      await this.db.getFirstAsync('SELECT currentStock FROM products LIMIT 1');
+      console.log('Database structure is correct');
+    } catch (error) {
+      console.log('Database structure is outdated, recreating tables...');
+      // Eliminar tablas existentes
+      await this.db.execAsync('DROP TABLE IF EXISTS products');
+      await this.db.execAsync('DROP TABLE IF EXISTS template');
+      await this.db.execAsync('DROP TABLE IF EXISTS stock_movements');
+      await this.db.execAsync('DROP TABLE IF EXISTS settings');
+    }
+
     const createProductsTable = `
       CREATE TABLE IF NOT EXISTS products (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL
-      );
-    `;
-
-    const createInventoryTable = `
-      CREATE TABLE IF NOT EXISTS inventory (
-        id TEXT PRIMARY KEY,
-        productId TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
+        description TEXT,
+        currentStock INTEGER DEFAULT 0,
         expiryDate TEXT,
         createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
+        updatedAt TEXT NOT NULL
       );
     `;
 
@@ -48,10 +52,22 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS template (
         id TEXT PRIMARY KEY,
         productId TEXT NOT NULL,
-        idealQuantity INTEGER NOT NULL,
-        priority TEXT NOT NULL,
+        idealQuantity INTEGER NOT NULL DEFAULT 0,
+        priority TEXT NOT NULL CHECK (priority IN ('high', 'medium', 'low')),
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
+        FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
+      );
+    `;
+
+    const createStockMovementsTable = `
+      CREATE TABLE IF NOT EXISTS stock_movements (
+        id TEXT PRIMARY KEY,
+        productId TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('add', 'remove', 'expired')),
+        quantity INTEGER NOT NULL,
+        reason TEXT,
+        createdAt TEXT NOT NULL,
         FOREIGN KEY (productId) REFERENCES products (id) ON DELETE CASCADE
       );
     `;
@@ -67,8 +83,8 @@ class DatabaseService {
     `;
 
     await this.db.execAsync(createProductsTable);
-    await this.db.execAsync(createInventoryTable);
     await this.db.execAsync(createTemplateTable);
+    await this.db.execAsync(createStockMovementsTable);
     await this.db.execAsync(createSettingsTable);
 
     // Insert default settings

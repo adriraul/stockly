@@ -15,7 +15,6 @@ export interface TemplateItem {
   id: string;
   productId: string;
   idealQuantity: number;
-  priority: 'high' | 'medium' | 'low';
   createdAt: string;
   updatedAt: string;
   // Campos adicionales para joins

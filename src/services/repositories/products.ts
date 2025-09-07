@@ -16,13 +16,12 @@ export class ProductsRepository {
       'SELECT * FROM products WHERE id = ?',
       [id],
     );
-
     return (result as Product) || null;
   }
 
   async create(
     product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
-  ): Promise<string> {
+  ): Promise<Product> {
     const db = databaseService.getDatabase();
     const id = `product_${Date.now()}_${Math.random()
       .toString(36)
@@ -30,30 +29,64 @@ export class ProductsRepository {
     const now = new Date().toISOString();
 
     await db.runAsync(
-      `INSERT INTO products (id, name, category, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?)`,
-      [id, product.name, product.category, now, now],
+      `INSERT INTO products (id, name, category, description, currentStock, expiryDate, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        product.name,
+        product.category,
+        product.description || null,
+        product.currentStock || 0,
+        product.expiryDate || null,
+        now,
+        now,
+      ],
     );
 
-    return id;
+    return this.getById(id) as Promise<Product>;
   }
 
   async update(
     id: string,
     updates: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>,
-  ): Promise<void> {
+  ): Promise<Product> {
     const db = databaseService.getDatabase();
     const now = new Date().toISOString();
 
-    const fields = Object.keys(updates)
-      .map(key => `${key} = ?`)
-      .join(', ');
-    const values = Object.values(updates);
+    const fields = [];
+    const values = [];
+
+    if (updates.name !== undefined) {
+      fields.push('name = ?');
+      values.push(updates.name);
+    }
+    if (updates.category !== undefined) {
+      fields.push('category = ?');
+      values.push(updates.category);
+    }
+    if (updates.description !== undefined) {
+      fields.push('description = ?');
+      values.push(updates.description);
+    }
+    if (updates.currentStock !== undefined) {
+      fields.push('currentStock = ?');
+      values.push(updates.currentStock);
+    }
+    if (updates.expiryDate !== undefined) {
+      fields.push('expiryDate = ?');
+      values.push(updates.expiryDate);
+    }
+
+    fields.push('updatedAt = ?');
+    values.push(now);
+    values.push(id);
 
     await db.runAsync(
-      `UPDATE products SET ${fields}, updatedAt = ? WHERE id = ?`,
-      [...values, now, id],
+      `UPDATE products SET ${fields.join(', ')} WHERE id = ?`,
+      values,
     );
+
+    return this.getById(id) as Promise<Product>;
   }
 
   async delete(id: string): Promise<void> {
@@ -61,22 +94,24 @@ export class ProductsRepository {
     await db.runAsync('DELETE FROM products WHERE id = ?', [id]);
   }
 
-  async getByCategory(category: string): Promise<Product[]> {
+  async updateStock(id: string, newStock: number): Promise<void> {
     const db = databaseService.getDatabase();
-    const results = await db.getAllAsync(
-      'SELECT * FROM products WHERE category = ? ORDER BY name ASC',
-      [category],
+    const now = new Date().toISOString();
+
+    await db.runAsync(
+      'UPDATE products SET currentStock = ?, updatedAt = ? WHERE id = ?',
+      [newStock, now, id],
     );
-    return results as Product[];
   }
 
-  async search(query: string): Promise<Product[]> {
+  async updateExpiryDate(id: string, expiryDate: string | null): Promise<void> {
     const db = databaseService.getDatabase();
-    const results = await db.getAllAsync(
-      'SELECT * FROM products WHERE name LIKE ? OR category LIKE ? ORDER BY name ASC',
-      [`%${query}%`, `%${query}%`],
+    const now = new Date().toISOString();
+
+    await db.runAsync(
+      'UPDATE products SET expiryDate = ?, updatedAt = ? WHERE id = ?',
+      [expiryDate, now, id],
     );
-    return results as Product[];
   }
 }
 

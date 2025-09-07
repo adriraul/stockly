@@ -13,223 +13,155 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { databaseService } from '../services/database/database';
+import { productsRepository } from '../services/repositories/products';
+import { settingsRepository } from '../services/repositories/settings';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 import { businessLogicService } from '../services/businessLogic';
-import { InventoryItem } from '../types';
+import { Product } from '../types';
 
-const ExpiryScreen: React.FC = () => {
-  const [expiringItems, setExpiringItems] = useState<InventoryItem[]>([]);
+const ExpiryScreenSimplified: React.FC = () => {
+  const [expiringItems, setExpiringItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expiryAlertDays, setExpiryAlertDays] = useState(7);
 
   useFocusEffect(
     useCallback(() => {
       loadExpiringItems();
-    }, [])
+    }, []),
   );
 
   const loadExpiringItems = async () => {
     try {
-      const items = await businessLogicService.getExpiringSoonItems();
-      setExpiringItems(items);
+      setLoading(true);
+      await databaseService.init();
+
+      const [allProducts, expiryAlertDays] = await Promise.all([
+        productsRepository.getAll(),
+        settingsRepository.get('expiryAlertDays'),
+      ]);
+
+      // Obtener días de anticipación configurados (por defecto 7)
+      const alertDays = expiryAlertDays ? parseInt(expiryAlertDays, 10) : 7;
+      console.log('Expiry - Días de anticipación configurados:', alertDays);
+      setExpiryAlertDays(alertDays);
+
+      // Filtrar productos que caducan en los próximos X días (configurable)
+      const expiring = allProducts.filter(product => {
+        if (!product.expiryDate) return false;
+        const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(
+          product.expiryDate,
+        );
+        return daysUntilExpiry >= 0 && daysUntilExpiry <= alertDays;
+      });
+
+      // Ordenar por días hasta caducidad
+      expiring.sort((a, b) => {
+        if (!a.expiryDate || !b.expiryDate) return 0;
+        const daysA = businessLogicService.getDaysUntilExpiry(a.expiryDate);
+        const daysB = businessLogicService.getDaysUntilExpiry(b.expiryDate);
+        return daysA - daysB;
+      });
+
+      setExpiringItems(expiring);
     } catch (error) {
       console.error('Error loading expiring items:', error);
-      Alert.alert('Error', 'No se pudo cargar los productos próximos a caducar');
+      Alert.alert(
+        'Error',
+        'No se pudieron cargar los productos próximos a caducar',
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     await loadExpiringItems();
     setRefreshing(false);
   };
 
-  const handleConsume = async (item: InventoryItem) => {
-    Alert.alert(
-      'Consumir Producto',
-      `¿Quieres consumir 1 ${item.unit} de ${item.productName}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Consumir',
-          onPress: async () => {
-            try {
-              await businessLogicService.consumeProduct(item.productId, 1);
-              Alert.alert('Éxito', 'Producto consumido');
-              loadExpiringItems();
-            } catch (error) {
-              console.error('Error consuming product:', error);
-              Alert.alert('Error', error.message || 'No se pudo consumir el producto');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDiscard = async (item: InventoryItem) => {
-    Alert.alert(
-      'Descartar Producto',
-      `¿Estás seguro de que quieres descartar ${item.quantity} ${item.unit} de ${item.productName}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Descartar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // TODO: Implementar descarte de producto
-              Alert.alert('Próximamente', 'Función de descarte en desarrollo');
-            } catch (error) {
-              console.error('Error discarding product:', error);
-              Alert.alert('Error', 'No se pudo descartar el producto');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const getExpiryStatus = (expiryDate: string) => {
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
-    
-    if (daysUntilExpiry < 0) {
-      return { text: 'Caducado', variant: 'danger' as const, color: '#dc2626' };
-    } else if (daysUntilExpiry === 0) {
-      return { text: 'Caduca hoy', variant: 'danger' as const, color: '#dc2626' };
-    } else if (daysUntilExpiry === 1) {
-      return { text: 'Caduca mañana', variant: 'warning' as const, color: '#d97706' };
-    } else if (daysUntilExpiry <= 3) {
-      return { text: `${daysUntilExpiry} días`, variant: 'warning' as const, color: '#d97706' };
-    } else {
-      return { text: `${daysUntilExpiry} días`, variant: 'info' as const, color: '#2563eb' };
-    }
+    if (daysUntilExpiry < 0)
+      return { text: 'Caducado', variant: 'danger' as const };
+    if (daysUntilExpiry === 0)
+      return { text: 'Hoy', variant: 'danger' as const };
+    if (daysUntilExpiry <= 3)
+      return { text: `${daysUntilExpiry}d`, variant: 'warning' as const };
+    return { text: `${daysUntilExpiry}d`, variant: 'info' as const };
   };
 
-  const groupByExpiryStatus = (items: InventoryItem[]) => {
-    const expired: InventoryItem[] = [];
-    const today: InventoryItem[] = [];
-    const tomorrow: InventoryItem[] = [];
-    const thisWeek: InventoryItem[] = [];
-    const nextWeek: InventoryItem[] = [];
+  const renderExpiringItem = ({ item }: { item: Product }) => {
+    const expiryStatus = getExpiryStatus(item.expiryDate!);
 
-    items.forEach(item => {
-      const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(item.expiryDate);
-      
-      if (daysUntilExpiry < 0) {
-        expired.push(item);
-      } else if (daysUntilExpiry === 0) {
-        today.push(item);
-      } else if (daysUntilExpiry === 1) {
-        tomorrow.push(item);
-      } else if (daysUntilExpiry <= 7) {
-        thisWeek.push(item);
-      } else {
-        nextWeek.push(item);
-      }
-    });
-
-    return { expired, today, tomorrow, thisWeek, nextWeek };
-  };
-
-  const renderExpiryItem = ({ item }: { item: InventoryItem }) => {
-    const expiryStatus = getExpiryStatus(item.expiryDate);
-    
     return (
       <Card style={styles.itemCard}>
         <View style={styles.itemHeader}>
-          <Text style={styles.itemName}>{item.productName}</Text>
+          <Text style={styles.itemName}>{item.name}</Text>
           <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
         </View>
         <View style={styles.itemDetails}>
-          <Text style={styles.itemQuantity}>
-            {item.quantity} {item.unit}
+          <Text style={styles.itemCategory}>📂 {item.category}</Text>
+          <Text style={styles.itemStock}>
+            Stock: {item.currentStock} unidades
           </Text>
-          <Text style={styles.itemLocation}>📍 {item.location}</Text>
+          {item.description && (
+            <Text style={styles.itemDescription}>{item.description}</Text>
+          )}
         </View>
-        <Text style={styles.itemExpiry}>
-          Caduca: {new Date(item.expiryDate).toLocaleDateString()}
-        </Text>
-        {item.notes && (
-          <Text style={styles.itemNotes}>📝 {item.notes}</Text>
-        )}
-        <View style={styles.itemActions}>
-          <Button
-            title="Consumir"
-            onPress={() => handleConsume(item)}
-            variant="secondary"
-            size="small"
-            style={styles.actionButton}
-          />
-          <Button
-            title="Descartar"
-            onPress={() => handleDiscard(item)}
-            variant="danger"
-            size="small"
-            style={styles.actionButton}
-          />
+        <View style={styles.itemFooter}>
+          <Text style={styles.itemExpiry}>
+            Caduca: {formatDateToDDMMYYYY(item.expiryDate!)}
+          </Text>
         </View>
       </Card>
     );
   };
 
-  const renderExpirySection = (title: string, items: InventoryItem[], color: string) => {
-    if (items.length === 0) return null;
-
-    return (
-      <View key={title} style={styles.section}>
-        <Text style={[styles.sectionTitle, { color }]}>
-          {title} ({items.length})
-        </Text>
-        {items.map((item) => (
-          <View key={item.id}>
-            {renderExpiryItem({ item })}
-          </View>
-        ))}
-      </View>
-    );
-  };
-
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>✅ Todo al Día</Text>
-      <Text style={styles.emptyText}>
-        ¡Excelente! No tienes productos próximos a caducar.
-        Tu inventario está bien gestionado.
+      <Text style={styles.emptyTitle}>¡Excelente!</Text>
+      <Text style={styles.emptyDescription}>
+        No tienes productos próximos a caducar en los próximos {expiryAlertDays}{' '}
+        días
       </Text>
     </Card>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando productos próximos a caducar...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Próximos a Caducar</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando productos...</Text>
+        </View>
       </View>
     );
   }
 
-  const { expired, today, tomorrow, thisWeek, nextWeek } = groupByExpiryStatus(expiringItems);
-
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Próximos a Caducar</Text>
+        <Text style={styles.subtitle}>
+          {expiringItems.length} productos caducan en los próximos{' '}
+          {expiryAlertDays} días
+        </Text>
+      </View>
+
       <FlatList
-        data={[]}
-        renderItem={() => null}
-        ListHeaderComponent={() => (
-          <>
-            {renderExpirySection('🚨 Caducados', expired, '#dc2626')}
-            {renderExpirySection('⚠️ Caducan Hoy', today, '#dc2626')}
-            {renderExpirySection('⏰ Caducan Mañana', tomorrow, '#d97706')}
-            {renderExpirySection('📅 Esta Semana', thisWeek, '#d97706')}
-            {renderExpirySection('📆 Próxima Semana', nextWeek, '#2563eb')}
-          </>
-        )}
+        data={expiringItems}
+        renderItem={renderExpiringItem}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
     </View>
@@ -241,30 +173,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 4,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    padding: 32,
   },
   loadingText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#64748b',
   },
   listContainer: {
     padding: 16,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    paddingLeft: 8,
+    flexGrow: 1,
   },
   itemCard: {
-    marginBottom: 8,
+    marginBottom: 12,
+    padding: 16,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -273,55 +215,53 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
     flex: 1,
+    marginRight: 8,
   },
   itemDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  itemQuantity: {
+  itemCategory: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#0369a1',
-  },
-  itemLocation: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  itemExpiry: {
-    fontSize: 12,
     color: '#64748b',
     marginBottom: 4,
   },
-  itemNotes: {
-    fontSize: 12,
+  itemStock: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0369a1',
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
     color: '#64748b',
     fontStyle: 'italic',
-    marginBottom: 8,
   },
-  itemActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  itemFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 8,
   },
-  actionButton: {
-    flex: 1,
-    marginHorizontal: 4,
+  itemExpiry: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
   },
   emptyCard: {
     alignItems: 'center',
-    paddingVertical: 40,
+    padding: 32,
+    marginTop: 64,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: '600',
+    color: '#1e293b',
     marginBottom: 8,
   },
-  emptyText: {
+  emptyDescription: {
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
@@ -329,4 +269,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExpiryScreen;
+export default ExpiryScreenSimplified;

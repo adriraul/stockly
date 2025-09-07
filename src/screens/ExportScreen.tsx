@@ -1,179 +1,230 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Alert,
   ScrollView,
+  Alert,
+  Share,
+  TouchableOpacity,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { Input } from '../components/Input';
-import { inventoryRepository } from '../services/repositories/inventory';
+import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
-import { settingsRepository } from '../services/repositories/settings';
+import { Product, TemplateItem } from '../types';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
-const ExportScreen: React.FC = () => {
-  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
-  const [includeTemplate, setIncludeTemplate] = useState(true);
-  const [includeSettings, setIncludeSettings] = useState(true);
-  const [exporting, setExporting] = useState(false);
+const ExportScreenSimplified: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleExport = async () => {
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, []),
+  );
+
+  const loadData = async () => {
     try {
-      setExporting(true);
-      
-      const [products, inventoryItems, templateItems, settings] = await Promise.all([
+      setLoading(true);
+      await databaseService.init();
+
+      const [productsData, templatesData] = await Promise.all([
         productsRepository.getAll(),
-        inventoryRepository.getAll(),
-        includeTemplate ? templateRepository.getAll() : [],
-        includeSettings ? settingsRepository.getAll() : [],
+        templateRepository.getAll(),
       ]);
 
-      const exportData = {
-        products,
-        inventory: inventoryItems,
-        template: includeTemplate ? templateItems : undefined,
-        settings: includeSettings ? settings : undefined,
-        exportDate: new Date().toISOString(),
-        version: '1.0.0',
-      };
+      setProducts(productsData);
+      setTemplates(templatesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'No se pudieron cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (exportFormat === 'json') {
-        await exportToJSON(exportData);
-      } else {
-        await exportToCSV(exportData);
+  const generateInventoryJSON = () => {
+    const inventoryData = products.map(product => ({
+      id: product.id,
+      nombre: product.name,
+      categoria: product.category,
+      descripcion: product.description || '',
+      stock_actual: product.currentStock,
+      fecha_caducidad: product.expiryDate
+        ? formatDateToDDMMYYYY(product.expiryDate)
+        : null,
+      fecha_creacion: formatDateToDDMMYYYY(product.createdAt),
+      fecha_actualizacion: formatDateToDDMMYYYY(product.updatedAt),
+    }));
+
+    return JSON.stringify(inventoryData, null, 2);
+  };
+
+  const generateShoppingList = () => {
+    const shoppingItems = products
+      .map(product => {
+        const template = templates.find(t => t.productId === product.id);
+        if (!template) return null;
+
+        const needed = template.idealQuantity - product.currentStock;
+        if (needed <= 0) return null;
+
+        return {
+          producto: product.name,
+          categoria: product.category,
+          stock_actual: product.currentStock,
+          stock_ideal: template.idealQuantity,
+          cantidad_necesaria: needed,
+          prioridad: template.priority,
+        };
+      })
+      .filter(Boolean);
+
+    return shoppingItems;
+  };
+
+  const exportInventoryJSON = async () => {
+    try {
+      const jsonData = generateInventoryJSON();
+      const fileName = `inventario_${
+        new Date().toISOString().split('T')[0]
+      }.json`;
+
+      await Share.share({
+        message: jsonData,
+        title: 'Exportar Inventario',
+        url: `data:application/json;base64,${btoa(jsonData)}`,
+      });
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      Alert.alert('Error', 'No se pudo exportar el archivo JSON');
+    }
+  };
+
+  const exportShoppingList = async () => {
+    try {
+      const shoppingItems = generateShoppingList();
+
+      if (shoppingItems.length === 0) {
+        Alert.alert('Lista vacía', 'No hay productos con stock bajo');
+        return;
       }
 
-      Alert.alert('Éxito', 'Datos exportados correctamente');
+      const shoppingListText = shoppingItems
+        .map(
+          item =>
+            `• ${item.producto} (${item.categoria})\n` +
+            `  Stock actual: ${item.stock_actual} | Ideal: ${item.stock_ideal}\n` +
+            `  Necesitas: ${item.cantidad_necesaria} unidades\n` +
+            `  Prioridad: ${item.prioridad}\n`,
+        )
+        .join('\n');
+
+      const fullText = `LISTA DE COMPRA - ${new Date().toLocaleDateString(
+        'es-ES',
+      )}\n\n${shoppingListText}`;
+
+      await Share.share({
+        message: fullText,
+        title: 'Lista de Compra',
+      });
     } catch (error) {
-      console.error('Error exporting data:', error);
-      Alert.alert('Error', 'No se pudo exportar los datos');
-    } finally {
-      setExporting(false);
+      console.error('Error exporting shopping list:', error);
+      Alert.alert('Error', 'No se pudo exportar la lista de compra');
     }
   };
 
-  const exportToJSON = async (data: any) => {
-    const jsonString = JSON.stringify(data, null, 2);
-    const fileName = `stockly_export_${new Date().toISOString().split('T')[0]}.json`;
-    
-    // TODO: Implementar descarga real del archivo
-    console.log('JSON Export:', jsonString);
-    Alert.alert('Exportación JSON', `Archivo: ${fileName}\n\nLos datos se han preparado para descarga.`);
-  };
-
-  const exportToCSV = async (data: any) => {
-    let csvContent = '';
-    
-    // Products CSV
-    csvContent += 'PRODUCTOS\n';
-    csvContent += 'ID,Nombre,Categoría,Unidad,Cantidad Mínima,Cantidad Máxima,Fecha Creación\n';
-    data.products.forEach((product: any) => {
-      csvContent += `${product.id},${product.name},${product.category},${product.unit},${product.minQuantity},${product.maxQuantity},${product.createdAt}\n`;
-    });
-    
-    csvContent += '\nINVENTARIO\n';
-    csvContent += 'ID,Producto ID,Cantidad,Fecha Caducidad,Fecha Compra,Ubicación,Notas\n';
-    data.inventory.forEach((item: any) => {
-      csvContent += `${item.id},${item.productId},${item.quantity},${item.expiryDate},${item.purchaseDate},${item.location},${item.notes || ''}\n`;
-    });
-
-    if (data.template) {
-      csvContent += '\nPLANTILLA\n';
-      csvContent += 'ID,Producto ID,Cantidad Ideal,Prioridad\n';
-      data.template.forEach((item: any) => {
-        csvContent += `${item.id},${item.productId},${item.idealQuantity},${item.priority}\n`;
-      });
-    }
-
-    if (data.settings) {
-      csvContent += '\nCONFIGURACIÓN\n';
-      csvContent += 'Clave,Valor\n';
-      data.settings.forEach((setting: any) => {
-        csvContent += `${setting.key},${setting.value}\n`;
-      });
-    }
-
-    const fileName = `stockly_export_${new Date().toISOString().split('T')[0]}.csv`;
-    
-    // TODO: Implementar descarga real del archivo
-    console.log('CSV Export:', csvContent);
-    Alert.alert('Exportación CSV', `Archivo: ${fileName}\n\nLos datos se han preparado para descarga.`);
-  };
-
-  const handleImport = () => {
-    Alert.alert('Próximamente', 'Función de importación en desarrollo');
-  };
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Exportar Datos</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando datos...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>📤 Exportar Datos</Text>
-        <Text style={styles.sectionDescription}>
-          Exporta todos tus datos de STOCKLY para hacer copias de seguridad o migrar a otro dispositivo.
+      <View style={styles.header}>
+        <Text style={styles.title}>Exportar Datos</Text>
+        <Text style={styles.subtitle}>
+          Exporta tu inventario y genera listas de compra
         </Text>
+      </View>
 
-        <View style={styles.optionsContainer}>
-          <Text style={styles.optionLabel}>Formato de exportación:</Text>
-          <View style={styles.radioGroup}>
-            <Button
-              title="CSV"
-              onPress={() => setExportFormat('csv')}
-              variant={exportFormat === 'csv' ? 'primary' : 'outline'}
-              style={styles.radioButton}
-            />
-            <Button
-              title="JSON"
-              onPress={() => setExportFormat('json')}
-              variant={exportFormat === 'json' ? 'primary' : 'outline'}
-              style={styles.radioButton}
-            />
+      <View style={styles.content}>
+        {/* Exportar Inventario */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>📦 Exportar Inventario</Text>
+          <Text style={styles.sectionDescription}>
+            Exporta todos los productos en formato JSON con información completa
+          </Text>
+          <Text style={styles.statsText}>
+            {products.length} productos disponibles para exportar
+          </Text>
+          <Button
+            title="Exportar JSON"
+            onPress={exportInventoryJSON}
+            variant="primary"
+            style={styles.exportButton}
+          />
+        </Card>
+
+        {/* Lista de Compra */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>🛒 Lista de Compra</Text>
+          <Text style={styles.sectionDescription}>
+            Genera una lista de productos que necesitas comprar según las
+            plantillas ideales
+          </Text>
+          <Text style={styles.statsText}>
+            {generateShoppingList().length} productos necesitan reposición
+          </Text>
+          <Button
+            title="Generar Lista"
+            onPress={exportShoppingList}
+            variant="outline"
+            style={styles.exportButton}
+          />
+        </Card>
+
+        {/* Vista previa de datos */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 Resumen de Datos</Text>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryNumber}>{products.length}</Text>
+              <Text style={styles.summaryLabel}>Productos</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryNumber}>
+                {products.reduce((sum, p) => sum + p.currentStock, 0)}
+              </Text>
+              <Text style={styles.summaryLabel}>Unidades</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryNumber}>{templates.length}</Text>
+              <Text style={styles.summaryLabel}>Plantillas</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryNumber}>
+                {generateShoppingList().length}
+              </Text>
+              <Text style={styles.summaryLabel}>Por Comprar</Text>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.optionsContainer}>
-          <Text style={styles.optionLabel}>Incluir en la exportación:</Text>
-          <View style={styles.checkboxContainer}>
-            <Text style={styles.checkboxText}>✓ Plantilla ideal</Text>
-            <Text style={styles.checkboxText}>✓ Configuración</Text>
-          </View>
-        </View>
-
-        <Button
-          title={exporting ? "Exportando..." : "Exportar Datos"}
-          onPress={handleExport}
-          variant="primary"
-          disabled={exporting}
-          style={styles.exportButton}
-        />
-      </Card>
-
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>📥 Importar Datos</Text>
-        <Text style={styles.sectionDescription}>
-          Importa datos desde un archivo de exportación anterior.
-        </Text>
-
-        <Button
-          title="Importar Archivo"
-          onPress={handleImport}
-          variant="outline"
-          style={styles.importButton}
-        />
-      </Card>
-
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>ℹ️ Información</Text>
-        <Text style={styles.infoText}>
-          • Los archivos CSV son compatibles con Excel y Google Sheets{'\n'}
-          • Los archivos JSON contienen toda la información en formato estructurado{'\n'}
-          • Las exportaciones incluyen la fecha y versión de la aplicación{'\n'}
-          • Guarda tus archivos de exportación en un lugar seguro
-        </Text>
-      </Card>
+        </Card>
+      </View>
     </ScrollView>
   );
 };
@@ -183,58 +234,84 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  card: {
-    margin: 16,
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
+  },
+  content: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: '600',
+    color: '#1e293b',
     marginBottom: 8,
   },
   sectionDescription: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  optionsContainer: {
-    marginBottom: 20,
-  },
-  optionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 12,
-  },
-  radioGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  radioButton: {
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  checkboxContainer: {
-    paddingLeft: 16,
-  },
-  checkboxText: {
-    fontSize: 16,
-    color: '#374151',
-    marginBottom: 8,
-  },
-  exportButton: {
-    width: '100%',
-    marginTop: 10,
-  },
-  importButton: {
-    width: '100%',
-  },
-  infoText: {
     fontSize: 14,
     color: '#64748b',
+    marginBottom: 12,
     lineHeight: 20,
+  },
+  statsText: {
+    fontSize: 14,
+    color: '#059669',
+    fontWeight: '500',
+    marginBottom: 16,
+  },
+  exportButton: {
+    marginTop: 8,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  summaryItem: {
+    flex: 1,
+    minWidth: '45%',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+  },
+  summaryNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
   },
 });
 
-export default ExportScreen;
+export default ExportScreenSimplified;

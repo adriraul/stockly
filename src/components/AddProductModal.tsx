@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
 import { DatePicker } from './DatePicker';
-import { productsRepository } from '../services/repositories/products_simplified';
+import { productsRepository } from '../services/repositories/products';
 import { parseDateFromDDMMYYYY, isValidDDMMYYYY } from '../utils/dateUtils';
 
 interface AddProductModalProps {
@@ -37,10 +37,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       return;
     }
 
-    if (!formData.category.trim()) {
-      Alert.alert('Error', 'La categoría es obligatoria');
-      return;
-    }
+    // Categoría es opcional, usar "Sin categoría" si está vacía
+    const category = formData.category.trim() || 'Sin categoría';
 
     const initialStock = parseInt(formData.initialStock) || 0;
     if (initialStock < 0) {
@@ -57,7 +55,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       // Crear el producto con stock inicial
       await productsRepository.create({
         name: formData.name.trim(),
-        category: formData.category.trim(),
+        category: category,
         description: formData.description.trim() || undefined,
         currentStock: initialStock,
         expiryDate: parsedExpiryDate,
@@ -94,26 +92,26 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           />
 
           <Input
-            label="Categoría *"
-            value={formData.category}
-            onChangeText={value => handleInputChange('category', value)}
-            placeholder="Ej: Lácteos, Panadería, Frutas..."
-          />
-
-          <Input
             label="Descripción (opcional)"
             value={formData.description}
             onChangeText={value => handleInputChange('description', value)}
             placeholder="Descripción del producto..."
             multiline
-            numberOfLines={3}
+            numberOfLines={2}
+          />
+
+          <Input
+            label="Categoría (opcional)"
+            value={formData.category}
+            onChangeText={value => handleInputChange('category', value)}
+            placeholder="Ej: Lácteos, Panadería, Frutas... (dejar vacío para 'Sin categoría')"
           />
 
           <Input
             label="Stock Inicial (unidades)"
             value={formData.initialStock}
             onChangeText={value => handleInputChange('initialStock', value)}
-            keyboardType="numeric"
+            keyboardType="number-pad"
             placeholder="Ejemplo: 10"
           />
 
@@ -149,7 +147,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
 const styles = StyleSheet.create({
   form: {
-    gap: 16,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
@@ -161,7 +159,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
+    marginTop: 12,
+    paddingHorizontal: 4,
   },
   button: {
     flex: 1,

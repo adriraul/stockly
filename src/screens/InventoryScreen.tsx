@@ -2,58 +2,84 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
-  RefreshControl,
+  FlatList,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
 import { AddProductModal } from '../components/AddProductModal';
-import { inventoryRepository } from '../services/repositories/inventory';
+import { SearchInput } from '../components/SearchInput';
+import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { InventoryItem } from '../types';
+import { Product } from '../types';
 
 type InventoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'Inventory'
 >;
 
-const InventoryScreen: React.FC = () => {
-  const navigation = useNavigation<InventoryScreenNavigationProp>();
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+interface Props {
+  navigation: InventoryScreenNavigationProp;
+}
+
+export default function InventoryScreen({ navigation }: Props) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
-      loadInventory();
+      loadProducts();
     }, []),
   );
 
-  const loadInventory = async () => {
+  const loadProducts = async () => {
     try {
-      const items = await inventoryRepository.getAll();
-      setInventoryItems(items);
+      setLoading(true);
+      const allProducts = await productsRepository.getAll();
+      setProducts(allProducts);
+      setFilteredProducts(allProducts);
     } catch (error) {
-      console.error('Error loading inventory:', error);
-      Alert.alert('Error', 'No se pudo cargar el inventario');
+      console.error('Error loading products:', error);
+      Alert.alert('Error', 'No se pudieron cargar los productos');
     } finally {
       setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
+  const filterProducts = (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredProducts(products);
+      return;
+    }
+
+    const filtered = products.filter(
+      product =>
+        product.name.toLowerCase().includes(query.toLowerCase()) ||
+        product.category.toLowerCase().includes(query.toLowerCase()) ||
+        (product.description &&
+          product.description.toLowerCase().includes(query.toLowerCase())),
+    );
+    setFilteredProducts(filtered);
+  };
+
+  const handleRefresh = async () => {
     setRefreshing(true);
-    await loadInventory();
+    await loadProducts();
     setRefreshing(false);
   };
 
@@ -62,11 +88,37 @@ const InventoryScreen: React.FC = () => {
   };
 
   const handleProductAdded = () => {
-    loadInventory();
+    loadProducts();
+    setShowAddModal(false);
+    setSearchQuery('');
   };
 
-  const handleItemPress = (item: InventoryItem) => {
-    navigation.navigate('ProductDetail', { productId: item.productId });
+  const handleProductPress = (product: Product) => {
+    navigation.navigate('ProductDetail', { productId: product.id });
+  };
+
+  const handleAddStock = async (product: Product) => {
+    try {
+      const newStock = product.currentStock + 1;
+      await productsRepository.updateStock(product.id, newStock);
+      await loadProducts();
+    } catch (error) {
+      console.error('Error adding stock:', error);
+      Alert.alert('Error', 'No se pudo agregar stock');
+    }
+  };
+
+  const handleRemoveStock = async (product: Product) => {
+    if (product.currentStock <= 0) return;
+
+    try {
+      const newStock = Math.max(0, product.currentStock - 1);
+      await productsRepository.updateStock(product.id, newStock);
+      await loadProducts();
+    } catch (error) {
+      console.error('Error removing stock:', error);
+      Alert.alert('Error', 'No se pudo quitar stock');
+    }
   };
 
   const getExpiryStatus = (expiryDate?: string) => {
@@ -83,27 +135,50 @@ const InventoryScreen: React.FC = () => {
     return { text: `${daysUntilExpiry}d`, variant: 'success' as const };
   };
 
-  const renderInventoryItem = ({ item }: { item: InventoryItem }) => {
+  const renderProductItem = ({ item }: { item: Product }) => {
     const expiryStatus = getExpiryStatus(item.expiryDate);
 
     return (
-      <TouchableOpacity onPress={() => handleItemPress(item)}>
+      <TouchableOpacity
+        onPress={() => handleProductPress(item)}
+        style={styles.itemContainer}
+      >
         <Card style={styles.itemCard}>
           <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>{item.productName}</Text>
+            <Text style={styles.itemName}>{item.name}</Text>
             <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
           </View>
           <View style={styles.itemDetails}>
-            <Text style={styles.itemQuantity}>{item.quantity} unidades</Text>
             <Text style={styles.itemCategory}>📂 {item.category}</Text>
+            <Text style={styles.itemDescription}>
+              {item.description || 'Sin descripción'}
+            </Text>
           </View>
-          <View style={styles.itemFooter}>
-            {item.expiryDate && (
+          <View style={styles.stockControls}>
+            <Button
+              title="-"
+              onPress={() => handleRemoveStock(item)}
+              variant="outline"
+              size="small"
+              disabled={item.currentStock <= 0}
+              style={styles.stockButton}
+            />
+            <Text style={styles.stockText}>{item.currentStock} unidades</Text>
+            <Button
+              title="+"
+              onPress={() => handleAddStock(item)}
+              variant="primary"
+              size="small"
+              style={styles.stockButton}
+            />
+          </View>
+          {item.expiryDate && (
+            <View style={styles.itemFooter}>
               <Text style={styles.itemExpiry}>
-                Caduca: {new Date(item.expiryDate).toLocaleDateString()}
+                Caduca: {formatDateToDDMMYYYY(item.expiryDate)}
               </Text>
-            )}
-          </View>
+            </View>
+          )}
         </Card>
       </TouchableOpacity>
     );
@@ -111,24 +186,33 @@ const InventoryScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>📦 Inventario Vacío</Text>
-      <Text style={styles.emptyText}>
-        No tienes productos en tu inventario. Agrega algunos productos para
-        comenzar.
+      <Text style={styles.emptyTitle}>
+        {searchQuery ? 'No se encontraron productos' : 'No hay productos'}
       </Text>
-      <Button
-        title="Agregar Producto"
-        onPress={handleAddProduct}
-        variant="primary"
-        style={styles.emptyButton}
-      />
+      <Text style={styles.emptyDescription}>
+        {searchQuery
+          ? 'Intenta con otros términos de búsqueda'
+          : 'Agrega tu primer producto para comenzar a gestionar tu inventario'}
+      </Text>
+      {!searchQuery && (
+        <Button
+          title="Agregar Producto"
+          onPress={handleAddProduct}
+          style={styles.emptyButton}
+        />
+      )}
     </Card>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando inventario...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Inventario</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando productos...</Text>
+        </View>
       </View>
     );
   }
@@ -136,23 +220,29 @@ const InventoryScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <Text style={styles.title}>Inventario</Text>
         <Button
-          title="+ Agregar Producto"
+          title="Agregar"
           onPress={handleAddProduct}
           variant="primary"
-          style={styles.addButton}
+          size="small"
         />
       </View>
+      <SearchInput
+        value={searchQuery}
+        onChangeText={filterProducts}
+        placeholder="Buscar productos..."
+      />
 
       <FlatList
-        data={inventoryItems}
-        renderItem={renderInventoryItem}
+        data={filteredProducts}
+        renderItem={renderProductItem}
         keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
 
@@ -163,37 +253,46 @@ const InventoryScreen: React.FC = () => {
       />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#64748b',
-  },
   header: {
-    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  addButton: {
-    width: '100%',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
   },
   listContainer: {
     padding: 16,
+    flexGrow: 1,
+  },
+  itemContainer: {
+    marginBottom: 12,
   },
   itemCard: {
-    marginBottom: 12,
+    padding: 16,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -202,55 +301,76 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
     flex: 1,
+    marginRight: 8,
   },
   itemDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  itemQuantity: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0369a1',
+    marginBottom: 12,
   },
   itemCategory: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    fontStyle: 'italic',
+  },
+  stockControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    paddingVertical: 8,
+  },
+  stockButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  stockText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginHorizontal: 16,
+    minWidth: 80,
+    textAlign: 'center',
   },
   itemFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 8,
   },
   itemExpiry: {
     fontSize: 12,
     color: '#9ca3af',
+    textAlign: 'center',
   },
   emptyCard: {
     alignItems: 'center',
-    paddingVertical: 40,
+    padding: 32,
+    marginTop: 64,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: '600',
+    color: '#1e293b',
     marginBottom: 8,
   },
-  emptyText: {
+  emptyDescription: {
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     lineHeight: 24,
   },
   emptyButton: {
-    width: '100%',
+    paddingHorizontal: 24,
   },
 });
-
-export default InventoryScreen;

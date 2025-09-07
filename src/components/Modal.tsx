@@ -55,7 +55,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    width: width * 0.9,
+    width: width * 0.92,
+    maxWidth: 420,
     maxHeight: '80%',
     shadowColor: '#000',
     shadowOffset: {
@@ -92,6 +93,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   content: {
-    padding: 20,
+    padding: 16,
+    paddingBottom: 20,
   },
 });

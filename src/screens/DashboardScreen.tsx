@@ -1,37 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
-  RefreshControl,
+  ScrollView,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { databaseService } from '../services/database/database_v3';
+import { databaseService } from '../services/database/database';
+import { productsRepository } from '../services/repositories/products';
+import { templateRepository } from '../services/repositories/template';
+import { settingsRepository } from '../services/repositories/settings';
 import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { DashboardStats } from '../types';
+import { Product } from '../types';
 
 type DashboardScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'Dashboard'
 >;
 
-const DashboardScreen: React.FC = () => {
-  const navigation = useNavigation<DashboardScreenNavigationProp>();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+interface Props {
+  navigation: DashboardScreenNavigationProp;
+}
+
+interface DashboardStats {
+  expiringSoon: number;
+  lowStock: number;
+}
+
+export default function DashboardScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    expiringSoon: 0,
+    lowStock: 0,
+  });
+  const [expiryAlertDays, setExpiryAlertDays] = useState(7);
 
   useEffect(() => {
     initializeApp();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading) {
+        loadDashboardData();
+      }
+    }, [loading]),
+  );
 
   const initializeApp = async () => {
     try {
@@ -47,29 +70,66 @@ const DashboardScreen: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      const dashboardStats = await businessLogicService.getDashboardStats();
-      setStats(dashboardStats);
+      const [products, templates, expiryAlertDays] = await Promise.all([
+        productsRepository.getAll(),
+        templateRepository.getAll(),
+        settingsRepository.get('expiryAlertDays'),
+      ]);
+
+      // Obtener días de anticipación configurados (por defecto 7)
+      const alertDays = expiryAlertDays ? parseInt(expiryAlertDays, 10) : 7;
+      console.log('Dashboard - Días de anticipación configurados:', alertDays);
+      setExpiryAlertDays(alertDays);
+
+      // Productos que caducan en los próximos X días (configurable)
+      const expiringSoon = products.filter(product => {
+        if (!product.expiryDate) return false;
+        const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(
+          product.expiryDate,
+        );
+        return daysUntilExpiry >= 0 && daysUntilExpiry <= alertDays;
+      }).length;
+
+      // Productos con stock bajo basado en plantillas
+      const lowStock = products.filter(product => {
+        const template = templates.find(t => t.productId === product.id);
+        if (!template) return false; // Solo contar si hay plantilla definida
+        return product.currentStock < template.idealQuantity;
+      }).length;
+
+      setStats({
+        expiringSoon,
+        lowStock,
+      });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      Alert.alert('Error', 'No se pudieron cargar las estadísticas');
     }
   };
 
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
   };
 
-  const getStatusColor = (count: number) => {
-    if (count === 0) return 'success';
-    if (count <= 3) return 'warning';
-    return 'danger';
+  const handleQuickAction = (screen: keyof RootStackParamList) => {
+    if (screen === 'Export' || screen === 'Shopping') {
+      navigation.navigate(screen);
+    } else {
+      navigation.navigate(screen);
+    }
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Cargando STOCKLY...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Dashboard</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando estadísticas...</Text>
+        </View>
       </View>
     );
   }
@@ -78,220 +138,276 @@ const DashboardScreen: React.FC = () => {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>STOCKLY</Text>
-        <Text style={styles.subtitle}>Tu inventario de alimentos personal</Text>
+        <Text style={styles.title}>Dashboard</Text>
+        <Text style={styles.subtitle}>Resumen de tu inventario</Text>
       </View>
 
-      {/* Stats Cards */}
-      {stats && (
-        <View style={styles.statsContainer}>
+      <View style={styles.content}>
+        {/* Estadísticas principales */}
+        <View style={styles.statsGrid}>
           <Card style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalProducts}</Text>
-            <Text style={styles.statLabel}>Productos</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                stats.expiringSoon > 0 ? styles.warningText : null,
+              ]}
+            >
+              {stats.expiringSoon}
+            </Text>
+            <Text style={styles.statLabel}>Caducan pronto</Text>
           </Card>
+
           <Card style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalItems}</Text>
-            <Text style={styles.statLabel}>Items en Stock</Text>
-          </Card>
-          <Card style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.recentPurchases}</Text>
-            <Text style={styles.statLabel}>Compras Recientes</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                stats.lowStock > 0 ? styles.dangerText : null,
+              ]}
+            >
+              {stats.lowStock}
+            </Text>
+            <Text style={styles.statLabel}>Stock bajo</Text>
           </Card>
         </View>
-      )}
 
-      {/* Alerts */}
-      {stats && (stats.expiringSoon > 0 || stats.lowStock > 0) && (
-        <Card style={styles.alertsCard}>
-          <Text style={styles.sectionTitle}>Alertas</Text>
-          {stats.expiringSoon > 0 && (
-            <View style={styles.alertItem}>
-              <Badge
-                text={`${stats.expiringSoon} próximos a caducar`}
-                variant={getStatusColor(stats.expiringSoon)}
-              />
-            </View>
-          )}
-          {stats.lowStock > 0 && (
-            <View style={styles.alertItem}>
-              <Badge
-                text={`${stats.lowStock} con stock bajo`}
-                variant={getStatusColor(stats.lowStock)}
-              />
-            </View>
-          )}
+        {/* Acciones rápidas */}
+        <Card style={styles.section}>
+          <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+          {/* Acciones principales */}
+          <View style={styles.primaryActions}>
+            <Button
+              title="📦 Ver Inventario"
+              onPress={() => handleQuickAction('Inventory')}
+              variant="primary"
+              style={styles.primaryButton}
+            />
+            <Button
+              title="🛒 Lista de Compra"
+              onPress={() => handleQuickAction('Shopping')}
+              variant="primary"
+              style={styles.primaryButton}
+            />
+          </View>
+
+          {/* Plantillas - justo debajo de los principales */}
+          <View style={styles.templateSection}>
+            <Button
+              title="📋 Plantillas Ideales"
+              onPress={() => handleQuickAction('Template')}
+              variant="outline"
+              style={styles.templateButton}
+            />
+          </View>
+
+          {/* Acciones secundarias */}
+          <View style={styles.secondaryActions}>
+            <Button
+              title="📊 Exportar"
+              onPress={() => handleQuickAction('Export')}
+              variant="outline"
+              style={styles.secondaryButton}
+            />
+            <Button
+              title="⏰ Caducados"
+              onPress={() => handleQuickAction('Expiry')}
+              variant="outline"
+              style={styles.secondaryButton}
+            />
+            <Button
+              title="⚙️"
+              onPress={() => handleQuickAction('Settings')}
+              variant="outline"
+              style={styles.settingsButton}
+            />
+          </View>
         </Card>
-      )}
 
-      {/* Quick Actions */}
-      <Card style={styles.actionsCard}>
-        <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
-        <View style={styles.buttonGrid}>
-          <Button
-            title="📦 Inventario"
-            onPress={() => navigation.navigate('Inventory')}
-            variant="primary"
-            style={styles.actionButton}
-          />
-          <Button
-            title="📋 Plantilla"
-            onPress={() => navigation.navigate('Template')}
-            variant="secondary"
-            style={styles.actionButton}
-          />
-          <Button
-            title="🛒 Lista Compra"
-            onPress={() => navigation.navigate('Shopping')}
-            variant="secondary"
-            style={styles.actionButton}
-          />
-          <Button
-            title="⏰ Caducidades"
-            onPress={() => navigation.navigate('Expiry')}
-            variant="secondary"
-            style={styles.actionButton}
-          />
-          <Button
-            title="📤 Exportar"
-            onPress={() => navigation.navigate('Export')}
-            variant="outline"
-            style={styles.actionButton}
-          />
-          <Button
-            title="⚙️ Configuración"
-            onPress={() => navigation.navigate('Settings')}
-            variant="outline"
-            style={styles.actionButton}
-          />
-        </View>
-      </Card>
+        {/* Alertas */}
+        {(stats.expiringSoon > 0 || stats.lowStock > 0) && (
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>Alertas</Text>
+            <View style={styles.alertsContainer}>
+              {stats.expiringSoon > 0 && (
+                <View style={styles.alert}>
+                  <Badge
+                    text={`${stats.expiringSoon} productos`}
+                    variant="warning"
+                  />
+                  <Text style={styles.alertText}>
+                    caducan en los próximos {expiryAlertDays} días
+                  </Text>
+                </View>
+              )}
+              {stats.lowStock > 0 && (
+                <View style={styles.alert}>
+                  <Badge
+                    text={`${stats.lowStock} productos`}
+                    variant="danger"
+                  />
+                  <Text style={styles.alertText}>tienen stock bajo</Text>
+                </View>
+              )}
+            </View>
+          </Card>
+        )}
 
-      {/* Welcome Message */}
-      {stats && stats.totalProducts === 0 && (
-        <Card style={styles.welcomeCard}>
-          <Text style={styles.welcomeTitle}>¡Bienvenido a STOCKLY!</Text>
-          <Text style={styles.welcomeText}>
-            Comienza agregando productos a tu inventario o configurando tu
-            plantilla ideal.
-          </Text>
-          <Button
-            title="Agregar Primer Producto"
-            onPress={() => navigation.navigate('Inventory')}
-            variant="primary"
-            style={styles.welcomeButton}
-          />
-        </Card>
-      )}
+        {/* Estado vacío */}
+        {stats.expiringSoon === 0 && stats.lowStock === 0 && (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>¡Bienvenido a Stockly!</Text>
+            <Text style={styles.emptyDescription}>
+              Comienza agregando tu primer producto para gestionar tu inventario
+            </Text>
+            <Button
+              title="Agregar Primer Producto"
+              onPress={() => handleQuickAction('Inventory')}
+              variant="primary"
+              style={styles.emptyButton}
+            />
+          </Card>
+        )}
+      </View>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#64748b',
-  },
   header: {
-    padding: 20,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#0369a1',
-    marginBottom: 8,
+    color: '#1e293b',
   },
   subtitle: {
     fontSize: 16,
     color: '#64748b',
-    textAlign: 'center',
+    marginTop: 4,
   },
-  statsContainer: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
+  },
+  content: {
+    padding: 16,
+  },
+  statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 24,
+    gap: 16,
   },
   statCard: {
     flex: 1,
-    marginHorizontal: 4,
     alignItems: 'center',
-    paddingVertical: 16,
+    padding: 20,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#0369a1',
+    color: '#1e293b',
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
   },
-  alertsCard: {
-    marginHorizontal: 16,
-    marginBottom: 20,
+  warningText: {
+    color: '#f59e0b',
+  },
+  dangerText: {
+    color: '#dc2626',
+  },
+  section: {
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 16,
   },
-  alertItem: {
-    marginBottom: 8,
-  },
-  actionsCard: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-  },
-  buttonGrid: {
+  primaryActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 16,
   },
-  actionButton: {
-    width: '48%',
+  primaryButton: {
+    flex: 1,
+    paddingVertical: 16,
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    gap: 8,
     marginBottom: 12,
   },
-  welcomeCard: {
-    marginHorizontal: 16,
-    marginBottom: 20,
+  secondaryButton: {
+    flex: 1,
+    paddingVertical: 12,
+  },
+  settingsButton: {
+    width: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  templateSection: {
+    marginBottom: 12,
+  },
+  templateButton: {
+    paddingVertical: 10,
+    opacity: 1,
+  },
+  alertsContainer: {
+    gap: 12,
+  },
+  alert: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  welcomeTitle: {
-    fontSize: 20,
+  alertText: {
+    fontSize: 14,
+    color: '#64748b',
+    flex: 1,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    padding: 32,
+    marginTop: 32,
+  },
+  emptyTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#1e293b',
     marginBottom: 8,
-    textAlign: 'center',
   },
-  welcomeText: {
+  emptyDescription: {
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
     lineHeight: 24,
   },
-  welcomeButton: {
-    width: '100%',
+  emptyButton: {
+    paddingHorizontal: 24,
   },
 });
-
-export default DashboardScreen;

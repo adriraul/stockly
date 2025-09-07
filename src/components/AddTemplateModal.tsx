@@ -144,7 +144,7 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
                 onChangeText={value =>
                   handleInputChange('idealQuantity', value)
                 }
-                keyboardType="numeric"
+                keyboardType="number-pad"
                 placeholder="1"
               />
 

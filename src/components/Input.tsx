@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   TextInput,
@@ -6,15 +6,21 @@ import {
   StyleSheet,
   ViewStyle,
   TextStyle,
-} from "react-native";
+} from 'react-native';
 
 interface InputProps {
   label?: string;
   placeholder?: string;
   value: string;
   onChangeText: (text: string) => void;
+  onBlur?: () => void;
   secureTextEntry?: boolean;
-  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
+  keyboardType?:
+    | 'default'
+    | 'numeric'
+    | 'email-address'
+    | 'phone-pad'
+    | 'number-pad';
   multiline?: boolean;
   numberOfLines?: number;
   error?: string;
@@ -28,8 +34,9 @@ export const Input: React.FC<InputProps> = ({
   placeholder,
   value,
   onChangeText,
+  onBlur,
   secureTextEntry = false,
-  keyboardType = "default",
+  keyboardType = 'default',
   multiline = false,
   numberOfLines = 1,
   error,
@@ -60,7 +67,10 @@ export const Input: React.FC<InputProps> = ({
         numberOfLines={numberOfLines}
         editable={!disabled}
         onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          setIsFocused(false);
+          onBlur?.();
+        }}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -73,36 +83,36 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
   },
   focused: {
-    borderColor: "#0369a1",
+    borderColor: '#0369a1',
     borderWidth: 2,
   },
   error: {
-    borderColor: "#dc2626",
+    borderColor: '#dc2626',
   },
   disabled: {
-    backgroundColor: "#f3f4f6",
-    color: "#9ca3af",
+    backgroundColor: '#f3f4f6',
+    color: '#9ca3af',
   },
   multiline: {
-    textAlignVertical: "top",
-    minHeight: 80,
+    textAlignVertical: 'top',
+    minHeight: 60,
   },
   errorText: {
-    color: "#dc2626",
+    color: '#dc2626',
     fontSize: 14,
     marginTop: 4,
   },

@@ -60,7 +60,7 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
           label="Cantidad comprada"
           value={quantity}
           onChangeText={setQuantity}
-          keyboardType="numeric"
+          keyboardType="number-pad"
           placeholder={`Ejemplo: ${needed}`}
         />
 

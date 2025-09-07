@@ -1,196 +1,244 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
+  FlatList,
   RefreshControl,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
-import { businessLogicService } from '../services/businessLogic';
-import { ShoppingListItem } from '../types';
+import { PurchaseModal } from '../components/PurchaseModal';
+import { databaseService } from '../services/database/database';
+import { productsRepository } from '../services/repositories/products';
+import { templateRepository } from '../services/repositories/template';
+import { Product, TemplateItem } from '../types';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
-const ShoppingScreen: React.FC = () => {
-  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
+interface ShoppingItem {
+  product: Product;
+  template: TemplateItem;
+  needed: number;
+}
+
+const ShoppingScreenSimplified: React.FC = () => {
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [purchaseModal, setPurchaseModal] = useState<{
+    visible: boolean;
+    item: ShoppingItem | null;
+  }>({ visible: false, item: null });
 
   useFocusEffect(
-    useCallback(() => {
-      generateShoppingList();
-    }, [])
+    React.useCallback(() => {
+      loadShoppingList();
+    }, []),
   );
 
-  const generateShoppingList = async () => {
+  const loadShoppingList = async () => {
     try {
-      const list = await businessLogicService.generateShoppingList();
-      setShoppingList(list);
+      setLoading(true);
+      await databaseService.init();
+
+      const [products, templates] = await Promise.all([
+        productsRepository.getAll(),
+        templateRepository.getAll(),
+      ]);
+
+      // Generar lista de compra
+      const items: ShoppingItem[] = products
+        .map(product => {
+          const template = templates.find(t => t.productId === product.id);
+          if (!template) return null;
+
+          const needed = template.idealQuantity - product.currentStock;
+          if (needed <= 0) return null;
+
+          return {
+            product,
+            template,
+            needed,
+          };
+        })
+        .filter(Boolean) as ShoppingItem[];
+
+      // Ordenar por prioridad
+      items.sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return (
+          priorityOrder[b.template.priority] -
+          priorityOrder[a.template.priority]
+        );
+      });
+
+      setShoppingItems(items);
     } catch (error) {
-      console.error('Error generating shopping list:', error);
-      Alert.alert('Error', 'No se pudo generar la lista de la compra');
+      console.error('Error loading shopping list:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    await generateShoppingList();
+    await loadShoppingList();
     setRefreshing(false);
   };
 
-  const handleMarkAsPurchased = (productId: string) => {
-    Alert.alert(
-      'Producto Comprado',
-      '¿Has comprado este producto?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sí',
-          onPress: () => {
-            // TODO: Implementar lógica para marcar como comprado
-            Alert.alert('Próximamente', 'Función de marcar como comprado en desarrollo');
-          },
-        },
-      ]
-    );
+  const handlePurchase = async (quantity: number) => {
+    if (!purchaseModal.item) return;
+
+    try {
+      const { product } = purchaseModal.item;
+      const newStock = product.currentStock + quantity;
+
+      await productsRepository.update(product.id, {
+        currentStock: newStock,
+      });
+
+      // Recargar la lista para actualizar los datos
+      await loadShoppingList();
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      Alert.alert('Error', 'No se pudo actualizar el stock del producto');
+    }
   };
 
-  const handleClearList = () => {
-    Alert.alert(
-      'Limpiar Lista',
-      '¿Estás seguro de que quieres limpiar toda la lista de la compra?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpiar',
-          style: 'destructive',
-          onPress: () => {
-            setShoppingList([]);
-            Alert.alert('Éxito', 'Lista de la compra limpiada');
-          },
-        },
-      ]
-    );
+  const handleItemPress = (item: ShoppingItem) => {
+    setPurchaseModal({ visible: true, item });
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'danger';
-      case 'medium': return 'warning';
-      case 'low': return 'success';
-      default: return 'default';
+      case 'high':
+        return '#dc2626';
+      case 'medium':
+        return '#f59e0b';
+      case 'low':
+        return '#059669';
+      default:
+        return '#6b7280';
     }
   };
 
   const getPriorityText = (priority: string) => {
     switch (priority) {
-      case 'high': return 'Alta';
-      case 'medium': return 'Media';
-      case 'low': return 'Baja';
-      default: return priority;
+      case 'high':
+        return 'Alta';
+      case 'medium':
+        return 'Media';
+      case 'low':
+        return 'Baja';
+      default:
+        return 'Sin prioridad';
     }
   };
 
-  const groupByCategory = (items: ShoppingListItem[]) => {
-    const grouped: { [key: string]: ShoppingListItem[] } = {};
-    items.forEach(item => {
-      if (!grouped[item.category]) {
-        grouped[item.category] = [];
-      }
-      grouped[item.category].push(item);
-    });
-    return grouped;
-  };
+  const renderShoppingItem = ({ item }: { item: ShoppingItem }) => {
+    const { product, template, needed } = item;
 
-  const renderShoppingItem = ({ item }: { item: ShoppingListItem }) => {
     return (
-      <Card style={styles.itemCard}>
-        <View style={styles.itemHeader}>
-          <Text style={styles.itemName}>{item.productName}</Text>
-          <Badge
-            text={getPriorityText(item.priority)}
-            variant={getPriorityColor(item.priority)}
-          />
-        </View>
-        <View style={styles.itemDetails}>
-          <Text style={styles.itemQuantity}>
-            Cantidad necesaria: {item.neededQuantity}
-          </Text>
-        </View>
-        <View style={styles.itemActions}>
-          <Button
-            title="✓ Comprado"
-            onPress={() => handleMarkAsPurchased(item.productId)}
-            variant="success"
-            size="small"
-            style={styles.actionButton}
-          />
-        </View>
-      </Card>
+      <TouchableOpacity onPress={() => handleItemPress(item)}>
+        <Card style={styles.itemCard}>
+          <View style={styles.itemHeader}>
+            <Text style={styles.itemName}>{product.name}</Text>
+            <Badge
+              text={getPriorityText(template.priority)}
+              variant={template.priority === 'high' ? 'danger' : 'warning'}
+            />
+          </View>
+
+          <View style={styles.itemDetails}>
+            <Text style={styles.itemCategory}>📂 {product.category}</Text>
+            {product.description && (
+              <Text style={styles.itemDescription}>{product.description}</Text>
+            )}
+          </View>
+
+          <View style={styles.stockInfo}>
+            <View style={styles.stockItem}>
+              <Text style={styles.stockLabel}>Stock actual:</Text>
+              <Text style={styles.stockValue}>{product.currentStock}</Text>
+            </View>
+            <View style={styles.stockItem}>
+              <Text style={styles.stockLabel}>Stock ideal:</Text>
+              <Text style={styles.stockValue}>{template.idealQuantity}</Text>
+            </View>
+            <View style={styles.stockItem}>
+              <Text style={styles.stockLabel}>Necesitas:</Text>
+              <Text style={[styles.stockValue, styles.neededValue]}>
+                {needed} unidades
+              </Text>
+            </View>
+          </View>
+
+          {product.expiryDate && (
+            <View style={styles.itemFooter}>
+              <Text style={styles.itemExpiry}>
+                Caduca: {formatDateToDDMMYYYY(product.expiryDate)}
+              </Text>
+            </View>
+          )}
+        </Card>
+      </TouchableOpacity>
     );
   };
 
-  const renderCategorySection = (category: string, items: ShoppingListItem[]) => (
-    <View key={category} style={styles.categorySection}>
-      <Text style={styles.categoryTitle}>📂 {category}</Text>
-      {items.map((item) => (
-        <View key={item.productId}>
-          {renderShoppingItem({ item })}
-        </View>
-      ))}
-    </View>
-  );
-
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>🛒 Lista Vacía</Text>
-      <Text style={styles.emptyText}>
-        ¡Excelente! No necesitas comprar nada en este momento.
-        Tu inventario está al día con tu plantilla ideal.
+      <Text style={styles.emptyTitle}>¡Lista de compra vacía!</Text>
+      <Text style={styles.emptyDescription}>
+        No hay productos que necesiten reposición. Tu inventario está al día.
       </Text>
     </Card>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Generando lista de la compra...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Lista de Compra</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando lista...</Text>
+        </View>
       </View>
     );
   }
 
-  const groupedItems = groupByCategory(shoppingList);
-
   return (
     <View style={styles.container}>
-      {shoppingList.length > 0 && (
-        <View style={styles.header}>
-          <Button
-            title="🗑️ Limpiar Lista"
-            onPress={handleClearList}
-            variant="danger"
-            style={styles.clearButton}
-          />
-        </View>
-      )}
+      <View style={styles.header}>
+        <Text style={styles.title}>Lista de Compra</Text>
+        <Text style={styles.subtitle}>
+          Productos que necesitas comprar según las plantillas ideales
+        </Text>
+      </View>
 
       <FlatList
-        data={Object.entries(groupedItems)}
-        renderItem={({ item: [category, items] }) => renderCategorySection(category, items)}
-        keyExtractor={([category]) => category}
+        data={shoppingItems}
+        renderItem={renderShoppingItem}
+        keyExtractor={item => item.product.id}
+        contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+      />
+
+      <PurchaseModal
+        visible={purchaseModal.visible}
+        onClose={() => setPurchaseModal({ visible: false, item: null })}
+        onPurchase={handlePurchase}
+        productName={purchaseModal.item?.product.name || ''}
+        needed={purchaseModal.item?.needed || 0}
+        currentStock={purchaseModal.item?.product.currentStock || 0}
       />
     </View>
   );
@@ -201,40 +249,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#64748b',
-  },
   header: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  clearButton: {
-    width: '100%',
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748b',
   },
   listContainer: {
     padding: 16,
   },
-  categorySection: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-    paddingLeft: 8,
-  },
   itemCard: {
-    marginBottom: 8,
+    marginBottom: 12,
+    opacity: 0.95,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -243,41 +290,73 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
     flex: 1,
   },
   itemDetails: {
     marginBottom: 12,
   },
-  itemQuantity: {
+  itemCategory: {
     fontSize: 14,
-    color: '#0369a1',
+    color: '#64748b',
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  stockInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  stockItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  stockLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 2,
+  },
+  stockValue: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#1e293b',
   },
-  itemActions: {
-    alignItems: 'flex-end',
+  neededValue: {
+    color: '#dc2626',
   },
-  actionButton: {
-    minWidth: 100,
+  itemFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 8,
+  },
+  itemExpiry: {
+    fontSize: 12,
+    color: '#f59e0b',
+    fontWeight: '500',
   },
   emptyCard: {
     alignItems: 'center',
-    paddingVertical: 40,
+    padding: 32,
+    marginTop: 32,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#1e293b',
     marginBottom: 8,
   },
-  emptyText: {
-    fontSize: 16,
+  emptyDescription: {
+    fontSize: 14,
     color: '#64748b',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
   },
 });
 
-export default ShoppingScreen;
+export default ShoppingScreenSimplified;
