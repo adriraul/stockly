@@ -18,6 +18,7 @@ import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
 import { Product, TemplateItem } from '../types';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
+import { theme } from '../constants/theme';
 
 interface ShoppingItem {
   product: Product;
@@ -143,18 +144,36 @@ const ShoppingScreenSimplified: React.FC = () => {
     const { product, template, needed } = item;
 
     return (
-      <TouchableOpacity onPress={() => handleItemPress(item)}>
-        <Card style={styles.itemCard}>
+      <TouchableOpacity
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+      >
+        <Card style={styles.itemCard} variant="elevated">
           <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>{product.name}</Text>
+            <View style={styles.itemTitleContainer}>
+              <Text style={styles.itemName}>{product.name}</Text>
+              <Text style={styles.itemCategory}>📂 {product.category}</Text>
+            </View>
             <Badge
               text={getPriorityText(template.priority)}
-              variant={template.priority === 'high' ? 'danger' : 'warning'}
+              variant={
+                template.priority === 'high'
+                  ? 'danger'
+                  : template.priority === 'medium'
+                  ? 'warning'
+                  : 'info'
+              }
+              icon={
+                template.priority === 'high'
+                  ? '🔥'
+                  : template.priority === 'medium'
+                  ? '⚡'
+                  : '📝'
+              }
             />
           </View>
 
           <View style={styles.itemDetails}>
-            <Text style={styles.itemCategory}>📂 {product.category}</Text>
             {product.description && (
               <Text style={styles.itemDescription}>{product.description}</Text>
             )}
@@ -162,17 +181,17 @@ const ShoppingScreenSimplified: React.FC = () => {
 
           <View style={styles.stockInfo}>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Stock actual:</Text>
+              <Text style={styles.stockLabel}>Stock actual</Text>
               <Text style={styles.stockValue}>{product.currentStock}</Text>
             </View>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Stock ideal:</Text>
+              <Text style={styles.stockLabel}>Stock ideal</Text>
               <Text style={styles.stockValue}>{template.idealQuantity}</Text>
             </View>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Necesitas:</Text>
+              <Text style={styles.stockLabel}>Necesitas</Text>
               <Text style={[styles.stockValue, styles.neededValue]}>
-                {needed} unidades
+                {needed}
               </Text>
             </View>
           </View>
@@ -180,7 +199,7 @@ const ShoppingScreenSimplified: React.FC = () => {
           {product.expiryDate && (
             <View style={styles.itemFooter}>
               <Text style={styles.itemExpiry}>
-                Caduca: {formatDateToDDMMYYYY(product.expiryDate)}
+                🗓️ Caduca: {formatDateToDDMMYYYY(product.expiryDate)}
               </Text>
             </View>
           )}
@@ -190,7 +209,8 @@ const ShoppingScreenSimplified: React.FC = () => {
   };
 
   const renderEmptyState = () => (
-    <Card style={styles.emptyCard}>
+    <Card style={styles.emptyCard} variant="filled">
+      <Text style={styles.emptyIcon}>🎉</Text>
       <Text style={styles.emptyTitle}>¡Lista de compra vacía!</Text>
       <Text style={styles.emptyDescription}>
         No hay productos que necesiten reposición. Tu inventario está al día.
@@ -202,10 +222,11 @@ const ShoppingScreenSimplified: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Lista de Compra</Text>
+          <Text style={styles.title}>🛒 Lista de Compra</Text>
+          <Text style={styles.subtitle}>Tu lista inteligente de compras</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando lista...</Text>
+          <Text style={styles.loadingText}>🔄 Cargando lista...</Text>
         </View>
       </View>
     );
@@ -214,7 +235,7 @@ const ShoppingScreenSimplified: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Lista de Compra</Text>
+        <Text style={styles.title}>🛒 Lista de Compra</Text>
         <Text style={styles.subtitle}>
           Productos que necesitas comprar según las plantillas ideales
         </Text>
@@ -247,115 +268,136 @@ const ShoppingScreenSimplified: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.colors.background.secondary,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+    backgroundColor: theme.colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.colors.neutral[200],
+    ...theme.shadows.sm,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: theme.typography.fontSize['3xl'],
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    marginTop: 4,
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.secondary,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: theme.spacing['2xl'],
   },
   loadingText: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   listContainer: {
-    padding: 16,
+    padding: theme.spacing.md,
   },
   itemCard: {
-    marginBottom: 12,
-    opacity: 0.95,
+    marginBottom: theme.spacing.md,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
+  },
+  itemTitleContainer: {
+    flex: 1,
+    marginRight: theme.spacing.sm,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    flex: 1,
-  },
-  itemDetails: {
-    marginBottom: 12,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   itemCategory: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 4,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  itemDetails: {
+    marginBottom: theme.spacing.md,
   },
   itemDescription: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
     fontStyle: 'italic',
+    lineHeight:
+      theme.typography.lineHeight.normal * theme.typography.fontSize.sm,
   },
   stockInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
+    backgroundColor: theme.colors.background.tertiary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.sm,
   },
   stockItem: {
     flex: 1,
     alignItems: 'center',
   },
   stockLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 2,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.xs,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   stockValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
   },
   neededValue: {
-    color: '#dc2626',
+    color: theme.colors.error,
   },
   itemFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingTop: 8,
+    borderTopColor: theme.colors.neutral[200],
+    paddingTop: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   itemExpiry: {
-    fontSize: 12,
-    color: '#f59e0b',
-    fontWeight: '500',
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.warning,
+    fontWeight: theme.typography.fontWeight.semibold,
+    textAlign: 'center',
   },
   emptyCard: {
     alignItems: 'center',
-    padding: 32,
-    marginTop: 32,
+    padding: theme.spacing['2xl'],
+    marginTop: theme.spacing['3xl'],
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
   },
   emptyDescription: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight:
+      theme.typography.lineHeight.relaxed * theme.typography.fontSize.base,
   },
 });
 

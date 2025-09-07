@@ -4,6 +4,10 @@ class DatabaseService {
   private db: SQLite.SQLiteDatabase | null = null;
 
   async init(): Promise<void> {
+    if (this.db) {
+      return;
+    }
+
     try {
       console.log('OPEN database: StocklyDB.db');
       this.db = await SQLite.openDatabaseAsync('StocklyDB.db');
@@ -15,6 +19,7 @@ class DatabaseService {
       console.log('Database initialized successfully');
     } catch (error) {
       console.error('Database initialization failed:', error);
+      this.db = null;
       throw error;
     }
   }
@@ -132,8 +137,13 @@ class DatabaseService {
 
   async close(): Promise<void> {
     if (this.db) {
-      await this.db.closeAsync();
-      this.db = null;
+      try {
+        await this.db.closeAsync();
+      } catch (error) {
+        console.error('Error closing database:', error);
+      } finally {
+        this.db = null;
+      }
     }
   }
 }

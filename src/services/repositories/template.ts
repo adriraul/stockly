@@ -138,6 +138,10 @@ export class TemplateRepository {
       fields.push('idealQuantity = ?');
       values.push(updates.idealQuantity);
     }
+    if (updates.priority !== undefined) {
+      fields.push('priority = ?');
+      values.push(updates.priority);
+    }
 
     fields.push('updatedAt = ?');
     values.push(now);
@@ -178,6 +182,7 @@ export class TemplateRepository {
     if (existing) {
       return this.updateByProductId(template.productId, {
         idealQuantity: template.idealQuantity,
+        priority: template.priority,
       }) as Promise<TemplateItem>;
     } else {
       return this.create(template);

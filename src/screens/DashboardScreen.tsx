@@ -1,18 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, Alert, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { StatCard } from '../components/StatCard';
 import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
@@ -20,6 +14,9 @@ import { settingsRepository } from '../services/repositories/settings';
 import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Product } from '../types';
+import { theme } from '../constants/theme';
+
+const { width } = Dimensions.get('window');
 
 type DashboardScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -37,7 +34,6 @@ interface DashboardStats {
 
 export default function DashboardScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     expiringSoon: 0,
     lowStock: 0,
@@ -107,12 +103,6 @@ export default function DashboardScreen({ navigation }: Props) {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-  };
-
   const handleQuickAction = (screen: keyof RootStackParamList) => {
     if (screen === 'Export' || screen === 'Shopping') {
       navigation.navigate(screen);
@@ -125,80 +115,79 @@ export default function DashboardScreen({ navigation }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Dashboard</Text>
+          <Text style={styles.title}>🥩 Stockly</Text>
+          <Text style={styles.subtitle}>
+            Tu asistente de inventario inteligente
+          </Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando estadísticas...</Text>
+          <Text style={styles.loadingText}>🔄 Cargando estadísticas...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Dashboard</Text>
-        <Text style={styles.subtitle}>Resumen de tu inventario</Text>
+        <Text style={styles.title}>🥩 Stockly</Text>
+        <Text style={styles.subtitle}>
+          Tu asistente de inventario inteligente
+        </Text>
       </View>
 
       <View style={styles.content}>
         {/* Estadísticas principales */}
         <View style={styles.statsGrid}>
-          <Card style={styles.statCard}>
-            <Text
-              style={[
-                styles.statNumber,
-                stats.expiringSoon > 0 ? styles.warningText : null,
-              ]}
-            >
-              {stats.expiringSoon}
-            </Text>
-            <Text style={styles.statLabel}>Caducan pronto</Text>
-          </Card>
+          <StatCard
+            title="Caducan pronto"
+            value={stats.expiringSoon}
+            subtitle={`En los próximos ${expiryAlertDays} días`}
+            icon="⏰"
+            color={stats.expiringSoon > 0 ? 'warning' : 'success'}
+            delay={0}
+          />
 
-          <Card style={styles.statCard}>
-            <Text
-              style={[
-                styles.statNumber,
-                stats.lowStock > 0 ? styles.dangerText : null,
-              ]}
-            >
-              {stats.lowStock}
-            </Text>
-            <Text style={styles.statLabel}>Stock bajo</Text>
-          </Card>
+          <StatCard
+            title="Stock bajo"
+            value={stats.lowStock}
+            subtitle="Necesitan reposición"
+            icon="📦"
+            color={stats.lowStock > 0 ? 'error' : 'success'}
+            delay={100}
+          />
         </View>
 
         {/* Acciones rápidas */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
+        <Card style={styles.section} variant="elevated">
           {/* Acciones principales */}
           <View style={styles.primaryActions}>
             <Button
-              title="📦 Ver Inventario"
+              title="Ver Inventario"
               onPress={() => handleQuickAction('Inventory')}
               variant="primary"
+              size="large"
+              icon="📦"
               style={styles.primaryButton}
             />
             <Button
-              title="🛒 Lista de Compra"
+              title="Lista de Compra"
               onPress={() => handleQuickAction('Shopping')}
               variant="primary"
+              size="large"
+              icon="🛒"
               style={styles.primaryButton}
             />
           </View>
 
-          {/* Plantillas - justo debajo de los principales */}
+          {/* Plantillas */}
           <View style={styles.templateSection}>
             <Button
-              title="📋 Plantillas Ideales"
+              title="Plantillas Ideales"
               onPress={() => handleQuickAction('Template')}
               variant="outline"
+              size="small"
+              icon="📋"
               style={styles.templateButton}
             />
           </View>
@@ -206,21 +195,27 @@ export default function DashboardScreen({ navigation }: Props) {
           {/* Acciones secundarias */}
           <View style={styles.secondaryActions}>
             <Button
-              title="📊 Exportar"
+              title="Exportar"
               onPress={() => handleQuickAction('Export')}
-              variant="outline"
+              variant="ghost"
+              size="small"
+              icon="📈"
               style={styles.secondaryButton}
             />
             <Button
-              title="⏰ Caducados"
+              title="Caducados"
               onPress={() => handleQuickAction('Expiry')}
-              variant="outline"
+              variant="ghost"
+              size="small"
+              icon="⏱️"
               style={styles.secondaryButton}
             />
             <Button
-              title="⚙️"
+              title=""
               onPress={() => handleQuickAction('Settings')}
-              variant="outline"
+              variant="ghost"
+              size="small"
+              icon="⚙"
               style={styles.settingsButton}
             />
           </View>
@@ -228,14 +223,18 @@ export default function DashboardScreen({ navigation }: Props) {
 
         {/* Alertas */}
         {(stats.expiringSoon > 0 || stats.lowStock > 0) && (
-          <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Alertas</Text>
+          <Card style={styles.section} variant="outlined">
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>⚠️ Alertas</Text>
+              <Text style={styles.sectionSubtitle}>Acción requerida</Text>
+            </View>
             <View style={styles.alertsContainer}>
               {stats.expiringSoon > 0 && (
                 <View style={styles.alert}>
                   <Badge
                     text={`${stats.expiringSoon} productos`}
                     variant="warning"
+                    icon="⏰"
                   />
                   <Text style={styles.alertText}>
                     caducan en los próximos {expiryAlertDays} días
@@ -247,6 +246,7 @@ export default function DashboardScreen({ navigation }: Props) {
                   <Badge
                     text={`${stats.lowStock} productos`}
                     variant="danger"
+                    icon="📦"
                   />
                   <Text style={styles.alertText}>tienen stock bajo</Text>
                 </View>
@@ -257,157 +257,160 @@ export default function DashboardScreen({ navigation }: Props) {
 
         {/* Estado vacío */}
         {stats.expiringSoon === 0 && stats.lowStock === 0 && (
-          <Card style={styles.emptyCard}>
+          <Card style={styles.emptyCard} variant="filled">
+            <Text style={styles.emptyIcon}>🎉</Text>
             <Text style={styles.emptyTitle}>¡Bienvenido a Stockly!</Text>
             <Text style={styles.emptyDescription}>
-              Comienza agregando tu primer producto para gestionar tu inventario
+              Tu asistente personal para gestionar el inventario de alimentos.
+              Comienza agregando tu primer producto y mantén todo organizado.
             </Text>
             <Button
               title="Agregar Primer Producto"
               onPress={() => handleQuickAction('Inventory')}
               variant="primary"
+              size="medium"
+              icon="➕"
               style={styles.emptyButton}
             />
           </Card>
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.colors.background.secondary,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.colors.neutral[200],
+    ...theme.shadows.sm,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: theme.typography.fontSize['2xl'],
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    marginTop: 4,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: theme.spacing['2xl'],
   },
   loadingText: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   content: {
-    padding: 16,
+    padding: theme.spacing.sm,
   },
   statsGrid: {
     flexDirection: 'row',
-    marginBottom: 24,
-    gap: 16,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 20,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  warningText: {
-    color: '#f59e0b',
-  },
-  dangerText: {
-    color: '#dc2626',
+    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: theme.spacing.sm,
+    padding: theme.spacing.md,
+  },
+  sectionHeader: {
+    marginBottom: theme.spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 16,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
+  },
+  sectionSubtitle: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.secondary,
   },
   primaryActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
   primaryButton: {
     flex: 1,
-    paddingVertical: 16,
+    minHeight: 60,
   },
   secondaryActions: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   secondaryButton: {
     flex: 1,
-    paddingVertical: 12,
+    minHeight: 44,
   },
   settingsButton: {
-    width: 50,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    width: 40,
+    aspectRatio: 1,
   },
   templateSection: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
   },
   templateButton: {
-    paddingVertical: 10,
-    opacity: 1,
+    width: '100%',
+    minHeight: 48,
   },
   alertsContainer: {
-    gap: 12,
+    gap: theme.spacing.sm,
   },
   alert: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: theme.spacing.xs,
+    padding: theme.spacing.xs,
+    backgroundColor: theme.colors.background.tertiary,
+    borderRadius: theme.borderRadius.md,
   },
   alertText: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
     flex: 1,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   emptyCard: {
     alignItems: 'center',
-    padding: 32,
-    marginTop: 32,
+    padding: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+  },
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: theme.spacing.sm,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
+    textAlign: 'center',
   },
   emptyDescription: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
+    marginBottom: theme.spacing.md,
+    lineHeight:
+      theme.typography.lineHeight.relaxed * theme.typography.fontSize.sm,
   },
   emptyButton: {
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.lg,
   },
 });

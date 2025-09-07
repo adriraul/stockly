@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { theme } from '../constants/theme';
 
 // Screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -31,27 +32,32 @@ const AppNavigator: React.FC = () => {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <StatusBar barStyle="light-content" backgroundColor="#0369a1" />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={theme.colors.primary[600]}
+        />
         <Stack.Navigator
           initialRouteName="Dashboard"
           screenOptions={{
             headerStyle: {
-              backgroundColor: '#0369a1',
+              backgroundColor: theme.colors.primary[600],
+              ...theme.shadows.md,
             },
-            headerTintColor: '#ffffff',
+            headerTintColor: theme.colors.text.inverse,
             headerTitleStyle: {
-              fontWeight: 'bold',
-              fontSize: 18,
+              fontWeight: theme.typography.fontWeight.bold,
+              fontSize: theme.typography.fontSize.lg,
             },
+            headerBackTitleVisible: false,
           }}
         >
           <Stack.Screen
             name="Dashboard"
             component={DashboardScreen}
             options={{
-              title: 'STOCKLY',
+              title: '🥩 STOCKLY',
               headerStyle: {
-                backgroundColor: '#0369a1',
+                backgroundColor: theme.colors.primary[600],
               },
             }}
           />
@@ -59,49 +65,49 @@ const AppNavigator: React.FC = () => {
             name="Inventory"
             component={InventoryScreen}
             options={{
-              title: 'Inventario',
+              title: '📦 Inventario',
             }}
           />
           <Stack.Screen
             name="ProductDetail"
             component={ProductDetailScreen}
             options={{
-              title: 'Detalle del Producto',
+              title: '🔍 Detalle del Producto',
             }}
           />
           <Stack.Screen
             name="Template"
             component={TemplateScreen}
             options={{
-              title: 'Plantilla Ideal',
+              title: '📋 Plantilla Ideal',
             }}
           />
           <Stack.Screen
             name="Shopping"
             component={ShoppingScreen}
             options={{
-              title: 'Lista de la Compra',
+              title: '🛒 Lista de la Compra',
             }}
           />
           <Stack.Screen
             name="Expiry"
             component={ExpiryScreen}
             options={{
-              title: 'Próximos a Caducar',
+              title: '⏰ Próximos a Caducar',
             }}
           />
           <Stack.Screen
             name="Export"
             component={ExportScreen}
             options={{
-              title: 'Exportar Datos',
+              title: '📊 Exportar Datos',
             }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
             options={{
-              title: 'Configuración',
+              title: '⚙️ Configuración',
             }}
           />
         </Stack.Navigator>

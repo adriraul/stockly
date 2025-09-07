@@ -145,7 +145,7 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
                   handleInputChange('idealQuantity', value)
                 }
                 keyboardType="number-pad"
-                placeholder="1"
+                placeholder="Ej: 5"
               />
 
               <View style={styles.prioritySection}>

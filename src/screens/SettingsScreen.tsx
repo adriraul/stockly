@@ -144,7 +144,7 @@ const SettingsScreenSimplified: React.FC = () => {
               }}
               keyboardType="number-pad"
               style={styles.numberInput}
-              placeholder="3"
+              placeholder="Ej: 3"
             />
             <Text style={styles.settingDescription}>
               Recibe alertas cuando los productos caduquen en los próximos días

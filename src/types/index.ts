@@ -2,6 +2,9 @@ export interface Product {
   id: string;
   name: string;
   category: string;
+  description?: string;
+  currentStock: number;
+  expiryDate?: string;
   createdAt: string;
   updatedAt: string;
 }

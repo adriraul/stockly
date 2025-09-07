@@ -95,7 +95,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             label="Descripción (opcional)"
             value={formData.description}
             onChangeText={value => handleInputChange('description', value)}
-            placeholder="Descripción del producto..."
+            placeholder="Ej: Leche entera de 1L, Pan integral..."
             multiline
             numberOfLines={2}
           />
@@ -104,7 +104,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             label="Categoría (opcional)"
             value={formData.category}
             onChangeText={value => handleInputChange('category', value)}
-            placeholder="Ej: Lácteos, Panadería, Frutas... (dejar vacío para 'Sin categoría')"
+            placeholder="Ej: Lácteos, Panadería, Frutas..."
           />
 
           <Input
@@ -112,7 +112,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
             value={formData.initialStock}
             onChangeText={value => handleInputChange('initialStock', value)}
             keyboardType="number-pad"
-            placeholder="Ejemplo: 10"
+            placeholder="Ej: 10"
           />
 
           <DatePicker

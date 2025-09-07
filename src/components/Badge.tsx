@@ -1,11 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { theme } from '../constants/theme';
 
 interface BadgeProps {
   text: string;
-  variant?: 'success' | 'warning' | 'danger' | 'info' | 'default';
+  variant?:
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'info'
+    | 'default'
+    | 'primary'
+    | 'secondary';
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
+  icon?: string;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -13,11 +22,12 @@ export const Badge: React.FC<BadgeProps> = ({
   variant = 'default',
   size = 'medium',
   style,
+  icon,
 }) => {
   return (
     <View style={[styles.badge, styles[variant], styles[size], style]}>
       <Text style={[styles.text, styles[`${variant}Text`]]}>
-        {text}
+        {icon ? `${icon} ${text}` : text}
       </Text>
     </View>
   );
@@ -25,55 +35,85 @@ export const Badge: React.FC<BadgeProps> = ({
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    ...theme.shadows.sm,
   },
   success: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: theme.colors.primary[100],
+    borderWidth: 1,
+    borderColor: theme.colors.primary[200],
   },
   warning: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: theme.colors.secondary[100],
+    borderWidth: 1,
+    borderColor: theme.colors.secondary[200],
   },
   danger: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: theme.colors.error + '20',
+    borderWidth: 1,
+    borderColor: theme.colors.error + '40',
   },
   info: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: theme.colors.accent.blue + '20',
+    borderWidth: 1,
+    borderColor: theme.colors.accent.blue + '40',
+  },
+  primary: {
+    backgroundColor: theme.colors.primary[500],
+    borderWidth: 0,
+  },
+  secondary: {
+    backgroundColor: theme.colors.secondary[500],
+    borderWidth: 0,
   },
   default: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: theme.colors.neutral[100],
+    borderWidth: 1,
+    borderColor: theme.colors.neutral[200],
   },
   small: {
-    paddingHorizontal: 6,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 2,
   },
   medium: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
   },
   large: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
   text: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: theme.typography.fontSize.xs,
+    fontWeight: theme.typography.fontWeight.semibold,
+    textAlign: 'center',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   successText: {
-    color: '#166534',
+    color: theme.colors.primary[700],
   },
   warningText: {
-    color: '#92400e',
+    color: theme.colors.secondary[700],
   },
   dangerText: {
-    color: '#991b1b',
+    color: theme.colors.error,
   },
   infoText: {
-    color: '#1e40af',
+    color: theme.colors.accent.blue,
+  },
+  primaryText: {
+    color: theme.colors.text.inverse,
+  },
+  secondaryText: {
+    color: theme.colors.text.inverse,
   },
   defaultText: {
-    color: '#374151',
+    color: theme.colors.text.secondary,
   },
 });

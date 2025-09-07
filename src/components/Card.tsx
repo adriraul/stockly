@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { theme } from '../constants/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -7,22 +8,33 @@ interface CardProps {
   padding?: number;
   margin?: number;
   shadow?: boolean;
+  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
+  borderRadius?: keyof typeof theme.borderRadius;
 }
 
-export const Card: React.FC<CardProps> = ({ 
-  children, 
-  style, 
-  padding = 16, 
+export const Card: React.FC<CardProps> = ({
+  children,
+  style,
+  padding = 16,
   margin = 0,
-  shadow = true 
+  shadow = true,
+  variant = 'default',
+  borderRadius = 'lg',
 }) => {
   return (
-    <View style={[
-      styles.card,
-      { padding, margin },
-      shadow && styles.shadow,
-      style
-    ]}>
+    <View
+      style={[
+        styles.card,
+        styles[variant],
+        {
+          padding,
+          margin,
+          borderRadius: theme.borderRadius[borderRadius],
+        },
+        shadow && styles.shadow,
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -30,19 +42,25 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: theme.colors.background.card,
+  },
+  default: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: theme.colors.neutral[200],
+  },
+  elevated: {
+    backgroundColor: theme.colors.background.card,
+  },
+  outlined: {
+    borderWidth: 2,
+    borderColor: theme.colors.primary[300],
+    backgroundColor: theme.colors.primary[50],
+  },
+  filled: {
+    backgroundColor: theme.colors.primary[100],
+    borderWidth: 0,
   },
   shadow: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...theme.shadows.md,
   },
 });

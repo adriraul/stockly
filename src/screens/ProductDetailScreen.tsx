@@ -210,7 +210,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 style={styles.input}
                 value={formData.name}
                 onChangeText={text => setFormData({ ...formData, name: text })}
-                placeholder="Nombre del producto"
+                placeholder="Ej: Leche, Pan, Manzanas..."
               />
             ) : (
               <Text style={styles.fieldValue}>{product.name}</Text>
@@ -226,7 +226,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChangeText={text =>
                   setFormData({ ...formData, category: text })
                 }
-                placeholder="Categoría del producto"
+                placeholder="Ej: Lácteos, Panadería, Frutas..."
               />
             ) : (
               <Text style={styles.fieldValue}>{product.category}</Text>
@@ -242,7 +242,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChangeText={text =>
                   setFormData({ ...formData, description: text })
                 }
-                placeholder="Descripción del producto (opcional)"
+                placeholder="Ej: Leche entera de 1L, Pan integral..."
                 multiline
                 numberOfLines={3}
               />

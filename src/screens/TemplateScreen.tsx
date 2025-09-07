@@ -125,6 +125,7 @@ const TemplateScreenSimplified: React.FC = () => {
         await templateRepository.upsert({
           productId,
           idealQuantity,
+          priority: 'medium', // Prioridad por defecto
         });
       }
       console.log('All changes saved on exit');
@@ -191,7 +192,7 @@ const TemplateScreenSimplified: React.FC = () => {
               onBlur={() => handleQuantityBlur(item.id)}
               keyboardType="number-pad"
               style={styles.quantityInput}
-              placeholder="0"
+              placeholder="Ej: 5"
             />
           </View>
         </View>

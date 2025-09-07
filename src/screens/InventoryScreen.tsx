@@ -22,6 +22,7 @@ import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Product } from '../types';
+import { theme } from '../constants/theme';
 
 type InventoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -100,10 +101,25 @@ export default function InventoryScreen({ navigation }: Props) {
   const handleAddStock = async (product: Product) => {
     try {
       const newStock = product.currentStock + 1;
+
+      // Actualizar inmediatamente la UI para evitar parpadeo
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, currentStock: newStock } : p,
+        ),
+      );
+      setFilteredProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, currentStock: newStock } : p,
+        ),
+      );
+
+      // Actualizar en la base de datos en segundo plano
       await productsRepository.updateStock(product.id, newStock);
-      await loadProducts();
     } catch (error) {
       console.error('Error adding stock:', error);
+      // Revertir cambios en caso de error
+      await loadProducts();
       Alert.alert('Error', 'No se pudo agregar stock');
     }
   };
@@ -113,10 +129,25 @@ export default function InventoryScreen({ navigation }: Props) {
 
     try {
       const newStock = Math.max(0, product.currentStock - 1);
+
+      // Actualizar inmediatamente la UI para evitar parpadeo
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, currentStock: newStock } : p,
+        ),
+      );
+      setFilteredProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === product.id ? { ...p, currentStock: newStock } : p,
+        ),
+      );
+
+      // Actualizar en la base de datos en segundo plano
       await productsRepository.updateStock(product.id, newStock);
-      await loadProducts();
     } catch (error) {
       console.error('Error removing stock:', error);
+      // Revertir cambios en caso de error
+      await loadProducts();
       Alert.alert('Error', 'No se pudo quitar stock');
     }
   };
@@ -142,40 +173,69 @@ export default function InventoryScreen({ navigation }: Props) {
       <TouchableOpacity
         onPress={() => handleProductPress(item)}
         style={styles.itemContainer}
+        activeOpacity={0.7}
       >
-        <Card style={styles.itemCard}>
+        <Card style={styles.itemCard} variant="elevated">
           <View style={styles.itemHeader}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
+            <View style={styles.itemTitleContainer}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemCategory}>📂 {item.category}</Text>
+            </View>
+            <Badge
+              text={expiryStatus.text}
+              variant={expiryStatus.variant}
+              icon={
+                expiryStatus.variant === 'danger'
+                  ? '⚠️'
+                  : expiryStatus.variant === 'warning'
+                  ? '⏰'
+                  : '✅'
+              }
+            />
           </View>
+
           <View style={styles.itemDetails}>
-            <Text style={styles.itemCategory}>📂 {item.category}</Text>
             <Text style={styles.itemDescription}>
               {item.description || 'Sin descripción'}
             </Text>
           </View>
+
           <View style={styles.stockControls}>
-            <Button
-              title="-"
+            <TouchableOpacity
               onPress={() => handleRemoveStock(item)}
-              variant="outline"
-              size="small"
               disabled={item.currentStock <= 0}
-              style={styles.stockButton}
-            />
-            <Text style={styles.stockText}>{item.currentStock} unidades</Text>
-            <Button
-              title="+"
+              style={[
+                styles.stockButton,
+                styles.stockButtonOutline,
+                item.currentStock <= 0 && styles.stockButtonDisabled,
+              ]}
+            >
+              <Text
+                style={[styles.stockButtonText, styles.stockButtonTextOutline]}
+              >
+                −
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.stockDisplay}>
+              <Text style={styles.stockNumber}>{item.currentStock}</Text>
+              <Text style={styles.stockLabel}>unidades</Text>
+            </View>
+            <TouchableOpacity
               onPress={() => handleAddStock(item)}
-              variant="primary"
-              size="small"
-              style={styles.stockButton}
-            />
+              style={[styles.stockButton, styles.stockButtonPrimary]}
+            >
+              <Text
+                style={[styles.stockButtonText, styles.stockButtonTextPrimary]}
+              >
+                +
+              </Text>
+            </TouchableOpacity>
           </View>
+
           {item.expiryDate && (
             <View style={styles.itemFooter}>
               <Text style={styles.itemExpiry}>
-                Caduca: {formatDateToDDMMYYYY(item.expiryDate)}
+                🗓️ Caduca: {formatDateToDDMMYYYY(item.expiryDate)}
               </Text>
             </View>
           )}
@@ -185,7 +245,8 @@ export default function InventoryScreen({ navigation }: Props) {
   };
 
   const renderEmptyState = () => (
-    <Card style={styles.emptyCard}>
+    <Card style={styles.emptyCard} variant="filled">
+      <Text style={styles.emptyIcon}>{searchQuery ? '🔍' : '📦'}</Text>
       <Text style={styles.emptyTitle}>
         {searchQuery ? 'No se encontraron productos' : 'No hay productos'}
       </Text>
@@ -198,6 +259,9 @@ export default function InventoryScreen({ navigation }: Props) {
         <Button
           title="Agregar Producto"
           onPress={handleAddProduct}
+          variant="primary"
+          size="large"
+          icon="➕"
           style={styles.emptyButton}
         />
       )}
@@ -208,10 +272,11 @@ export default function InventoryScreen({ navigation }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Inventario</Text>
+          <Text style={styles.title}>📦 Inventario</Text>
+          <Text style={styles.subtitle}>Gestiona tus productos</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando productos...</Text>
+          <Text style={styles.loadingText}>🔄 Cargando productos...</Text>
         </View>
       </View>
     );
@@ -220,18 +285,23 @@ export default function InventoryScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Inventario</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>📦 Inventario</Text>
+          <Text style={styles.subtitle}>Gestiona tus productos</Text>
+        </View>
         <Button
           title="Agregar"
           onPress={handleAddProduct}
           variant="primary"
-          size="small"
+          size="medium"
+          icon="➕"
         />
       </View>
       <SearchInput
         value={searchQuery}
         onChangeText={filterProducts}
         placeholder="Buscar productos..."
+        icon="🔍"
       />
 
       <FlatList
@@ -258,119 +328,176 @@ export default function InventoryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.colors.background.secondary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.background.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.colors.neutral[200],
+    ...theme.shadows.sm,
+  },
+  headerContent: {
+    flex: 1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: theme.typography.fontSize['2xl'],
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
+  subtitle: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    marginTop: theme.spacing.xs,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: theme.spacing['2xl'],
   },
   loadingText: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.lg,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   listContainer: {
-    padding: 16,
+    padding: theme.spacing.md,
     flexGrow: 1,
   },
   itemContainer: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   itemCard: {
-    padding: 16,
+    padding: theme.spacing.lg,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
+  },
+  itemTitleContainer: {
+    flex: 1,
+    marginRight: theme.spacing.sm,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-    flex: 1,
-    marginRight: 8,
-  },
-  itemDetails: {
-    marginBottom: 12,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   itemCategory: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 4,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  itemDetails: {
+    marginBottom: theme.spacing.md,
   },
   itemDescription: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.text.secondary,
     fontStyle: 'italic',
+    lineHeight:
+      theme.typography.lineHeight.normal * theme.typography.fontSize.sm,
   },
   stockControls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-    paddingVertical: 8,
+    marginBottom: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.background.tertiary,
+    borderRadius: theme.borderRadius.lg,
   },
   stockButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  stockText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginHorizontal: 16,
-    minWidth: 80,
+  stockButtonOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: theme.colors.primary[500],
+  },
+  stockButtonPrimary: {
+    backgroundColor: theme.colors.primary[500],
+  },
+  stockButtonDisabled: {
+    opacity: 0.5,
+  },
+  stockButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
     textAlign: 'center',
+  },
+  stockButtonTextOutline: {
+    color: theme.colors.primary[600],
+  },
+  stockButtonTextPrimary: {
+    color: theme.colors.text.inverse,
+  },
+  stockDisplay: {
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.lg,
+    minWidth: 80,
+  },
+  stockNumber: {
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
+  stockLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   itemFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingTop: 8,
+    borderTopColor: theme.colors.neutral[200],
+    paddingTop: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   itemExpiry: {
-    fontSize: 12,
-    color: '#9ca3af',
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.tertiary,
     textAlign: 'center',
+    fontWeight: theme.typography.fontWeight.medium,
   },
   emptyCard: {
     alignItems: 'center',
-    padding: 32,
-    marginTop: 64,
+    padding: theme.spacing['2xl'],
+    marginTop: theme.spacing['3xl'],
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
   },
   emptyDescription: {
-    fontSize: 16,
-    color: '#64748b',
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.text.secondary,
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 24,
+    marginBottom: theme.spacing.xl,
+    lineHeight:
+      theme.typography.lineHeight.relaxed * theme.typography.fontSize.base,
   },
   emptyButton: {
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.xl,
   },
 });
