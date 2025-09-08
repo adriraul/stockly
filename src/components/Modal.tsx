@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 
 interface ModalProps {
@@ -30,17 +33,30 @@ export const Modal: React.FC<ModalProps> = ({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.overlayContent}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
           </View>
-          <View style={styles.content}>{children}</View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </RNModal>
   );
 };
@@ -52,12 +68,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  overlayContent: {
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '90%',
+    paddingHorizontal: 16,
+  },
   container: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    width: width * 0.92,
-    maxWidth: 420,
-    maxHeight: '80%',
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -91,6 +111,9 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  scrollView: {
+    maxHeight: 400,
   },
   content: {
     padding: 16,

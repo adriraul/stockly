@@ -49,6 +49,34 @@ const AppNavigator: React.FC = () => {
               fontSize: theme.typography.fontSize.lg,
             },
             headerBackTitleVisible: false,
+            cardStyleInterpolator: ({ current, layouts }) => {
+              return {
+                cardStyle: {
+                  transform: [
+                    {
+                      translateX: current.progress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [layouts.screen.width, 0],
+                      }),
+                    },
+                  ],
+                },
+              };
+            },
+            transitionSpec: {
+              open: {
+                animation: 'timing',
+                config: {
+                  duration: 300,
+                },
+              },
+              close: {
+                animation: 'timing',
+                config: {
+                  duration: 300,
+                },
+              },
+            },
           }}
         >
           <Stack.Screen

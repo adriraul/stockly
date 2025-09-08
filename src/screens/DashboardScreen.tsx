@@ -212,11 +212,10 @@ export default function DashboardScreen({ navigation }: Props) {
               style={styles.secondaryButton}
             />
             <Button
-              title=""
+              title="⚙"
               onPress={() => handleQuickAction('Settings')}
               variant="ghost"
               size="small"
-              icon="⚙"
               style={styles.settingsButton}
             />
           </View>
@@ -358,8 +357,10 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   settingsButton: {
-    width: 40,
-    aspectRatio: 1,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   templateSection: {
     marginBottom: theme.spacing.sm,

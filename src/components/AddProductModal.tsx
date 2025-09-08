@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -82,65 +82,63 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   return (
     <Modal visible={visible} onClose={onClose} title="Agregar Producto">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.form}>
-          <Input
-            label="Nombre del Producto *"
-            value={formData.name}
-            onChangeText={value => handleInputChange('name', value)}
-            placeholder="Ej: Leche, Pan, Manzanas..."
-          />
+      <View style={styles.form}>
+        <Input
+          label="Nombre del Producto *"
+          value={formData.name}
+          onChangeText={value => handleInputChange('name', value)}
+          placeholder="Ej: Leche, Pan, Manzanas..."
+        />
 
-          <Input
-            label="Descripción (opcional)"
-            value={formData.description}
-            onChangeText={value => handleInputChange('description', value)}
-            placeholder="Ej: Leche entera de 1L, Pan integral..."
-            multiline
-            numberOfLines={2}
-          />
+        <Input
+          label="Descripción (opcional)"
+          value={formData.description}
+          onChangeText={value => handleInputChange('description', value)}
+          placeholder="Ej: Leche entera de 1L, Pan integral..."
+          multiline
+          numberOfLines={2}
+        />
 
-          <Input
-            label="Categoría (opcional)"
-            value={formData.category}
-            onChangeText={value => handleInputChange('category', value)}
-            placeholder="Ej: Lácteos, Panadería, Frutas..."
-          />
+        <Input
+          label="Categoría (opcional)"
+          value={formData.category}
+          onChangeText={value => handleInputChange('category', value)}
+          placeholder="Ej: Lácteos, Panadería, Frutas..."
+        />
 
-          <Input
-            label="Stock Inicial (unidades)"
-            value={formData.initialStock}
-            onChangeText={value => handleInputChange('initialStock', value)}
-            keyboardType="number-pad"
-            placeholder="Ej: 10"
-          />
+        <Input
+          label="Stock Inicial (unidades)"
+          value={formData.initialStock}
+          onChangeText={value => handleInputChange('initialStock', value)}
+          keyboardType="number-pad"
+          placeholder="Ej: 10"
+        />
 
-          <DatePicker
-            label="Fecha de Caducidad (opcional)"
-            value={formData.expiryDate}
-            onChange={value =>
-              setFormData(prev => ({ ...prev, expiryDate: value }))
-            }
-            placeholder="Seleccionar fecha"
-          />
+        <DatePicker
+          label="Fecha de Caducidad (opcional)"
+          value={formData.expiryDate}
+          onChange={value =>
+            setFormData(prev => ({ ...prev, expiryDate: value }))
+          }
+          placeholder="Seleccionar fecha"
+        />
 
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Cancelar"
-              onPress={onClose}
-              variant="outline"
-              style={styles.button}
-            />
-            <Button
-              title={loading ? 'Agregando...' : 'Agregar Producto'}
-              onPress={handleSubmit}
-              variant="primary"
-              style={styles.button}
-              disabled={loading}
-            />
-          </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Cancelar"
+            onPress={onClose}
+            variant="outline"
+            style={styles.button}
+          />
+          <Button
+            title={loading ? 'Agregando...' : 'Agregar Producto'}
+            onPress={handleSubmit}
+            variant="primary"
+            style={styles.button}
+            disabled={loading}
+          />
         </View>
-      </ScrollView>
+      </View>
     </Modal>
   );
 };

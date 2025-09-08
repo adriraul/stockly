@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -98,108 +98,106 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
 
   return (
     <Modal visible={visible} onClose={onClose} title="Agregar a Plantilla">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.form}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Seleccionar Producto</Text>
-            {products.length === 0 ? (
-              <Text style={styles.emptyText}>
-                No hay productos disponibles. Primero agrega productos al
-                inventario.
-              </Text>
-            ) : (
-              <View style={styles.productList}>
-                {products.map(product => (
-                  <Button
-                    key={product.id}
-                    title={`${product.name} (${product.category})`}
-                    onPress={() => setSelectedProductId(product.id)}
-                    variant={
-                      selectedProductId === product.id ? 'primary' : 'outline'
-                    }
-                    style={styles.productButton}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
-
-          {selectedProduct && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Configurar Plantilla</Text>
-
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{selectedProduct.name}</Text>
-                <Text style={styles.productCategory}>
-                  📂 {selectedProduct.category}
-                </Text>
-                <Text style={styles.productUnit}>
-                  📏 {selectedProduct.unit}
-                </Text>
-              </View>
-
-              <Input
-                label="Cantidad Ideal *"
-                value={formData.idealQuantity}
-                onChangeText={value =>
-                  handleInputChange('idealQuantity', value)
-                }
-                keyboardType="number-pad"
-                placeholder="Ej: 5"
-              />
-
-              <View style={styles.prioritySection}>
-                <Text style={styles.priorityLabel}>Prioridad</Text>
-                <View style={styles.priorityButtons}>
-                  <Button
-                    title="Alta"
-                    onPress={() => handleInputChange('priority', 'high')}
-                    variant={
-                      formData.priority === 'high' ? 'primary' : 'outline'
-                    }
-                    size="small"
-                    style={styles.priorityButton}
-                  />
-                  <Button
-                    title="Media"
-                    onPress={() => handleInputChange('priority', 'medium')}
-                    variant={
-                      formData.priority === 'medium' ? 'primary' : 'outline'
-                    }
-                    size="small"
-                    style={styles.priorityButton}
-                  />
-                  <Button
-                    title="Baja"
-                    onPress={() => handleInputChange('priority', 'low')}
-                    variant={
-                      formData.priority === 'low' ? 'primary' : 'outline'
-                    }
-                    size="small"
-                    style={styles.priorityButton}
-                  />
-                </View>
-              </View>
+      <View style={styles.form}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Seleccionar Producto</Text>
+          {products.length === 0 ? (
+            <Text style={styles.emptyText}>
+              No hay productos disponibles. Primero agrega productos al
+              inventario.
+            </Text>
+          ) : (
+            <View style={styles.productList}>
+              {products.map(product => (
+                <Button
+                  key={product.id}
+                  title={`${product.name} (${product.category})`}
+                  onPress={() => setSelectedProductId(product.id)}
+                  variant={
+                    selectedProductId === product.id ? 'primary' : 'outline'
+                  }
+                  style={styles.productButton}
+                />
+              ))}
             </View>
           )}
-
-          <View style={styles.buttonContainer}>
-            <Button
-              title="Cancelar"
-              onPress={onClose}
-              variant="outline"
-              style={styles.button}
-            />
-            <Button
-              title={loading ? 'Agregando...' : 'Agregar a Plantilla'}
-              onPress={handleSubmit}
-              variant="primary"
-              style={styles.button}
-              disabled={loading || !selectedProductId}
-            />
-          </View>
         </View>
-      </ScrollView>
+
+        {selectedProduct && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Configurar Plantilla</Text>
+
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{selectedProduct.name}</Text>
+              <Text style={styles.productCategory}>
+                📂 {selectedProduct.category}
+              </Text>
+              <Text style={styles.productUnit}>
+                📏 {selectedProduct.unit}
+              </Text>
+            </View>
+
+            <Input
+              label="Cantidad Ideal *"
+              value={formData.idealQuantity}
+              onChangeText={value =>
+                handleInputChange('idealQuantity', value)
+              }
+              keyboardType="number-pad"
+              placeholder="Ej: 5"
+            />
+
+            <View style={styles.prioritySection}>
+              <Text style={styles.priorityLabel}>Prioridad</Text>
+              <View style={styles.priorityButtons}>
+                <Button
+                  title="Alta"
+                  onPress={() => handleInputChange('priority', 'high')}
+                  variant={
+                    formData.priority === 'high' ? 'primary' : 'outline'
+                  }
+                  size="small"
+                  style={styles.priorityButton}
+                />
+                <Button
+                  title="Media"
+                  onPress={() => handleInputChange('priority', 'medium')}
+                  variant={
+                    formData.priority === 'medium' ? 'primary' : 'outline'
+                  }
+                  size="small"
+                  style={styles.priorityButton}
+                />
+                <Button
+                  title="Baja"
+                  onPress={() => handleInputChange('priority', 'low')}
+                  variant={
+                    formData.priority === 'low' ? 'primary' : 'outline'
+                  }
+                  size="small"
+                  style={styles.priorityButton}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Cancelar"
+            onPress={onClose}
+            variant="outline"
+            style={styles.button}
+          />
+          <Button
+            title={loading ? 'Agregando...' : 'Agregar a Plantilla'}
+            onPress={handleSubmit}
+            variant="primary"
+            style={styles.button}
+            disabled={loading || !selectedProductId}
+          />
+        </View>
+      </View>
     </Modal>
   );
 };
