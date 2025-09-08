@@ -2,12 +2,23 @@ import * as SQLite from 'expo-sqlite';
 
 class DatabaseService {
   private db: SQLite.SQLiteDatabase | null = null;
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
     if (this.db) {
       return;
     }
 
+    // Si ya hay una inicialización en progreso, esperar a que termine
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this._init();
+    return this.initPromise;
+  }
+
+  private async _init(): Promise<void> {
     try {
       console.log('OPEN database: StocklyDB.db');
       this.db = await SQLite.openDatabaseAsync('StocklyDB.db');
@@ -20,6 +31,7 @@ class DatabaseService {
     } catch (error) {
       console.error('Database initialization failed:', error);
       this.db = null;
+      this.initPromise = null;
       throw error;
     }
   }
@@ -29,6 +41,20 @@ class DatabaseService {
 
     // Verificar si la tabla products tiene la estructura correcta
     try {
+      // Verificar si la columna category permite NULL
+      const result = await this.db.getFirstAsync(`
+        SELECT sql FROM sqlite_master 
+        WHERE type='table' AND name='products'
+      `);
+      
+      if (result && typeof result === 'object' && 'sql' in result) {
+        const sql = result.sql as string;
+        if (sql.includes('category TEXT NOT NULL')) {
+          console.log('Database schema needs update - category column is NOT NULL');
+          throw new Error('Schema needs update');
+        }
+      }
+      
       await this.db.getFirstAsync('SELECT currentStock FROM products LIMIT 1');
       console.log('Database structure is correct');
     } catch (error) {
@@ -44,7 +70,7 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS products (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        category TEXT NOT NULL,
+        category TEXT,
         description TEXT,
         currentStock INTEGER DEFAULT 0,
         expiryDate TEXT,
@@ -139,12 +165,19 @@ class DatabaseService {
     if (this.db) {
       try {
         await this.db.closeAsync();
+        console.log('Database closed successfully');
       } catch (error) {
         console.error('Error closing database:', error);
       } finally {
         this.db = null;
+        this.initPromise = null;
       }
     }
+  }
+
+  async reset(): Promise<void> {
+    await this.close();
+    await this.init();
   }
 }
 

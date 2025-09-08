@@ -132,19 +132,15 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
               <Text style={styles.productCategory}>
                 📂 {selectedProduct.category}
               </Text>
-              <Text style={styles.productUnit}>
-                📏 {selectedProduct.unit}
-              </Text>
+              <Text style={styles.productUnit}>📏 {selectedProduct.unit}</Text>
             </View>
 
             <Input
               label="Cantidad Ideal *"
               value={formData.idealQuantity}
-              onChangeText={value =>
-                handleInputChange('idealQuantity', value)
-              }
+              onChangeText={value => handleInputChange('idealQuantity', value)}
               keyboardType="number-pad"
-              placeholder="Ej: 5"
+              placeholder="5"
             />
 
             <View style={styles.prioritySection}>
@@ -153,9 +149,7 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
                 <Button
                   title="Alta"
                   onPress={() => handleInputChange('priority', 'high')}
-                  variant={
-                    formData.priority === 'high' ? 'primary' : 'outline'
-                  }
+                  variant={formData.priority === 'high' ? 'primary' : 'outline'}
                   size="small"
                   style={styles.priorityButton}
                 />
@@ -171,9 +165,7 @@ export const AddTemplateModal: React.FC<AddTemplateModalProps> = ({
                 <Button
                   title="Baja"
                   onPress={() => handleInputChange('priority', 'low')}
-                  variant={
-                    formData.priority === 'low' ? 'primary' : 'outline'
-                  }
+                  variant={formData.priority === 'low' ? 'primary' : 'outline'}
                   size="small"
                   style={styles.priorityButton}
                 />

@@ -192,7 +192,7 @@ const TemplateScreenSimplified: React.FC = () => {
               onBlur={() => handleQuantityBlur(item.id)}
               keyboardType="number-pad"
               style={styles.quantityInput}
-              placeholder="Ej: 5"
+              placeholder="5"
             />
           </View>
         </View>

@@ -74,7 +74,10 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
       }
     } catch (error) {
       console.error('Error loading product data:', error);
-      Alert.alert(t.common.error, 'No se pudo cargar la información del producto');
+      Alert.alert(
+        t.common.error,
+        'No se pudo cargar la información del producto',
+      );
     } finally {
       setLoading(false);
     }
@@ -149,9 +152,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           <Text style={styles.title}>{t.common.loading}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>
-            {t.common.loading}
-          </Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       </View>
     );
@@ -212,7 +213,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 style={styles.input}
                 value={formData.name}
                 onChangeText={text => setFormData({ ...formData, name: text })}
-                placeholder="Ej: Leche, Pan, Manzanas..."
+                placeholder="Leche, Pan, Manzanas..."
               />
             ) : (
               <Text style={styles.fieldValue}>{product.name}</Text>
@@ -228,7 +229,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChangeText={text =>
                   setFormData({ ...formData, category: text })
                 }
-                placeholder="Ej: Lácteos, Panadería, Frutas..."
+                placeholder="Lácteos, Panadería, Frutas..."
               />
             ) : (
               <Text style={styles.fieldValue}>{product.category}</Text>
@@ -244,7 +245,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChangeText={text =>
                   setFormData({ ...formData, description: text })
                 }
-                placeholder="Ej: Leche entera de 1L, Pan integral..."
+                placeholder="Leche entera de 1L, Pan integral..."
                 multiline
                 numberOfLines={3}
               />

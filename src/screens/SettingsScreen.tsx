@@ -180,7 +180,7 @@ const SettingsScreenSimplified: React.FC = () => {
                 }}
                 keyboardType="number-pad"
                 style={styles.numberInput}
-                placeholder="Ej: 3"
+                placeholder="3"
               />
               <Text style={styles.settingDescription}>
                 {t.settings.expiryDaysDescription}

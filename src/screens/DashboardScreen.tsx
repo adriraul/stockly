@@ -68,7 +68,20 @@ export default function DashboardScreen({ navigation }: Props) {
       await loadDashboardData();
     } catch (error) {
       console.error('Error initializing app:', error);
-      Alert.alert(t.common.error, 'No se pudo inicializar la aplicación');
+      
+      // Si hay un error de base de datos, intentar reinicializar
+      if (error instanceof Error && error.message.includes('database')) {
+        try {
+          console.log('Attempting to reset database...');
+          await databaseService.reset();
+          await loadDashboardData();
+        } catch (resetError) {
+          console.error('Error resetting database:', resetError);
+          Alert.alert(t.common.error, 'No se pudo inicializar la aplicación');
+        }
+      } else {
+        Alert.alert(t.common.error, 'No se pudo inicializar la aplicación');
+      }
     } finally {
       setLoading(false);
     }
@@ -309,7 +322,6 @@ export default function DashboardScreen({ navigation }: Props) {
             </Card>
           )}
       </View>
-
     </View>
   );
 }

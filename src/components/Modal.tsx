@@ -71,13 +71,16 @@ const styles = StyleSheet.create({
   overlayContent: {
     width: '100%',
     maxWidth: 420,
-    maxHeight: '90%',
     paddingHorizontal: 16,
+    paddingVertical: 20,
+    flex: 1,
+    justifyContent: 'center',
   },
   container: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
     width: '100%',
+    maxHeight: '90%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -113,7 +116,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   scrollView: {
-    maxHeight: 400,
+    flexGrow: 1,
   },
   content: {
     padding: 16,

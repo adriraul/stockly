@@ -113,7 +113,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           value={formData.initialStock}
           onChangeText={value => handleInputChange('initialStock', value)}
           keyboardType="number-pad"
-          placeholder="Ej: 10"
+          placeholder="10"
         />
 
         <DatePicker
