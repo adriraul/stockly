@@ -3,6 +3,7 @@ import * as SQLite from 'expo-sqlite';
 class DatabaseService {
   private db: SQLite.SQLiteDatabase | null = null;
   private initPromise: Promise<void> | null = null;
+  private readonly DATABASE_VERSION = 2; // Incrementar cuando haya cambios de esquema
 
   async init(): Promise<void> {
     if (this.db) {
@@ -39,32 +40,137 @@ class DatabaseService {
   private async createTables(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
-    // Verificar si la tabla products tiene la estructura correcta
-    try {
-      // Verificar si la columna category permite NULL
-      const result = await this.db.getFirstAsync(`
-        SELECT sql FROM sqlite_master 
-        WHERE type='table' AND name='products'
-      `);
-      
-      if (result && typeof result === 'object' && 'sql' in result) {
-        const sql = result.sql as string;
-        if (sql.includes('category TEXT NOT NULL')) {
-          console.log('Database schema needs update - category column is NOT NULL');
-          throw new Error('Schema needs update');
-        }
-      }
-      
-      await this.db.getFirstAsync('SELECT currentStock FROM products LIMIT 1');
-      console.log('Database structure is correct');
-    } catch (error) {
-      console.log('Database structure is outdated, recreating tables...');
-      // Eliminar tablas existentes
-      await this.db.execAsync('DROP TABLE IF EXISTS products');
-      await this.db.execAsync('DROP TABLE IF EXISTS template');
-      await this.db.execAsync('DROP TABLE IF EXISTS stock_movements');
-      await this.db.execAsync('DROP TABLE IF EXISTS settings');
+    // Crear tabla de versiones si no existe
+    await this.createVersionTable();
+
+    // Obtener versión actual de la base de datos
+    const currentVersion = await this.getDatabaseVersion();
+
+    if (currentVersion === 0) {
+      // Base de datos nueva
+      console.log('Creating new database...');
+      await this.createAllTables();
+      await this.setDatabaseVersion(this.DATABASE_VERSION);
+    } else if (currentVersion < this.DATABASE_VERSION) {
+      // Necesita migración
+      console.log(
+        `Database needs migration from version ${currentVersion} to ${this.DATABASE_VERSION}`,
+      );
+      await this.migrateDatabase(currentVersion, this.DATABASE_VERSION);
+    } else {
+      console.log(`Database is up to date (version ${currentVersion})`);
     }
+  }
+
+  private async createVersionTable(): Promise<void> {
+    if (!this.db) return;
+
+    await this.db.execAsync(`
+      CREATE TABLE IF NOT EXISTS database_version (
+        id INTEGER PRIMARY KEY,
+        version INTEGER NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+  }
+
+  private async getDatabaseVersion(): Promise<number> {
+    if (!this.db) return 0;
+
+    try {
+      const result = await this.db.getFirstAsync(`
+        SELECT version FROM database_version 
+        ORDER BY updated_at DESC 
+        LIMIT 1
+      `);
+
+      return result ? (result as any).version : 0;
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  private async setDatabaseVersion(version: number): Promise<void> {
+    if (!this.db) return;
+
+    await this.db.runAsync(
+      `INSERT INTO database_version (version, updated_at) VALUES (?, ?)`,
+      version,
+      new Date().toISOString(),
+    );
+  }
+
+  private async migrateDatabase(
+    fromVersion: number,
+    toVersion: number,
+  ): Promise<void> {
+    if (!this.db) return;
+
+    console.log(
+      `Migrating database from version ${fromVersion} to ${toVersion}`,
+    );
+
+    // Migración de versión 1 a 2: Hacer category nullable
+    if (fromVersion < 2) {
+      await this.migrateCategoryToNullable();
+      await this.setDatabaseVersion(2);
+    }
+
+    // Aquí se pueden agregar más migraciones en el futuro
+    // if (fromVersion < 3) {
+    //   await this.migrateToVersion3();
+    //   await this.setDatabaseVersion(3);
+    // }
+  }
+
+  private async migrateCategoryToNullable(): Promise<void> {
+    if (!this.db) return;
+
+    try {
+      console.log('Migrating category column to nullable...');
+
+      // Crear tabla temporal con la nueva estructura
+      await this.db.execAsync(`
+        CREATE TABLE products_new (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          category TEXT,
+          description TEXT,
+          currentStock INTEGER DEFAULT 0,
+          expiryDate TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
+      // Copiar datos existentes
+      await this.db.execAsync(`
+        INSERT INTO products_new (id, name, category, description, currentStock, expiryDate, createdAt, updatedAt)
+        SELECT id, name, 
+               CASE WHEN category = 'Sin categoría' THEN NULL ELSE category END,
+               description, currentStock, expiryDate, createdAt, updatedAt
+        FROM products;
+      `);
+
+      // Eliminar tabla antigua y renombrar la nueva
+      await this.db.execAsync('DROP TABLE products');
+      await this.db.execAsync('ALTER TABLE products_new RENAME TO products');
+
+      console.log('Category migration completed successfully');
+    } catch (error) {
+      console.error('Error during migration:', error);
+      throw error;
+    }
+  }
+
+  private async createAllTables(): Promise<void> {
+    if (!this.db) return;
+
+    // Eliminar tablas existentes
+    await this.db.execAsync('DROP TABLE IF EXISTS products');
+    await this.db.execAsync('DROP TABLE IF EXISTS template');
+    await this.db.execAsync('DROP TABLE IF EXISTS stock_movements');
+    await this.db.execAsync('DROP TABLE IF EXISTS settings');
 
     const createProductsTable = `
       CREATE TABLE IF NOT EXISTS products (

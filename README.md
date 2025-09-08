@@ -76,7 +76,8 @@ Una aplicación móvil completa para gestionar tu inventario de alimentos person
 
 - **SQLite**: Almacenamiento local
 - **Repositorios**: Patrón DAO para acceso a datos
-- **Migraciones**: Tablas creadas automáticamente
+- **Migraciones**: Sistema inteligente de migración de esquemas
+- **Preservación de Datos**: Los datos se mantienen entre actualizaciones
 
 ### ✅ Lógica de Negocio
 
@@ -84,6 +85,62 @@ Una aplicación móvil completa para gestionar tu inventario de alimentos person
 - **Alertas**: Productos próximos a caducar
 - **Plantillas**: Cantidades ideales por producto
 - **Lista de Compra**: Generada automáticamente
+
+## 🔄 Sistema de Migración de Base de Datos
+
+### ¿Por qué es importante?
+
+La aplicación incluye un **sistema inteligente de migración** que garantiza que **nunca se pierdan los datos** al actualizar la aplicación. Esto es crucial cuando distribuyes la APK a amigos o familiares.
+
+### ¿Cómo funciona?
+
+1. **Control de Versiones**: La base de datos tiene un sistema de versionado interno
+2. **Migración Automática**: Al abrir la app, detecta si necesita actualizar el esquema
+3. **Preservación de Datos**: Migra los datos existentes a la nueva estructura
+4. **Solo si es Necesario**: Si la versión es la misma, no hace nada
+
+### Ejemplo Práctico
+
+```typescript
+// Versión actual de la base de datos
+private readonly DATABASE_VERSION = 2;
+
+// Al abrir la app:
+// - Si es versión 0: Crea base de datos nueva
+// - Si es versión 1: Migra a versión 2 preservando datos
+// - Si es versión 2: No hace nada, todo está actualizado
+```
+
+### Migraciones Implementadas
+
+- **Versión 1 → 2**: Migración de columna `category` de `NOT NULL` a `NULL`
+  - Convierte automáticamente "Sin categoría" a `NULL`
+  - Preserva todos los productos existentes
+
+### Para Futuras Actualizaciones
+
+Cuando necesites cambiar el esquema de la base de datos:
+
+1. **Incrementa la versión**:
+
+   ```typescript
+   private readonly DATABASE_VERSION = 3; // Nueva versión
+   ```
+
+2. **Agrega la migración**:
+   ```typescript
+   if (fromVersion < 3) {
+     await this.migrateToVersion3();
+     await this.setDatabaseVersion(3);
+   }
+   ```
+
+### Ventajas
+
+- ✅ **Datos Seguros**: Los usuarios nunca pierden su inventario
+- ✅ **Actualizaciones Transparentes**: Se aplican automáticamente
+- ✅ **Escalable**: Fácil agregar nuevas migraciones
+- ✅ **Robusto**: Solo recrea la base de datos en casos extremos
 
 ## 🛠️ Estructura del Proyecto
 
