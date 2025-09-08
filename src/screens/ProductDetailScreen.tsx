@@ -23,6 +23,7 @@ import {
 } from '../utils/dateUtils';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Product } from '../types';
+import { useTranslations } from '../utils/i18n';
 
 type ProductDetailScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function ProductDetailScreen({ navigation, route }: Props) {
+  const t = useTranslations();
   const { productId } = route.params;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,12 +69,12 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           expiryDate: productData.expiryDate,
         });
       } else {
-        Alert.alert('Error', 'Producto no encontrado');
+        Alert.alert(t.common.error, 'Producto no encontrado');
         navigation.goBack();
       }
     } catch (error) {
       console.error('Error loading product data:', error);
-      Alert.alert('Error', 'No se pudo cargar la información del producto');
+      Alert.alert(t.common.error, 'No se pudo cargar la información del producto');
     } finally {
       setLoading(false);
     }
@@ -98,7 +100,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
       navigation.goBack();
     } catch (error) {
       console.error('Error updating product:', error);
-      Alert.alert('Error', 'No se pudo actualizar el producto');
+      Alert.alert(t.common.error, 'No se pudo actualizar el producto');
     }
   };
 
@@ -118,21 +120,21 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     if (!product) return;
 
     Alert.alert(
-      'Eliminar Producto',
+      t.product.delete,
       `¿Estás seguro de que quieres eliminar "${product.name}"?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: t.product.delete,
           style: 'destructive',
           onPress: async () => {
             try {
               await productsRepository.delete(product.id);
-              Alert.alert('Éxito', 'Producto eliminado correctamente');
+              Alert.alert(t.common.success, 'Producto eliminado correctamente');
               navigation.goBack();
             } catch (error) {
               console.error('Error deleting product:', error);
-              Alert.alert('Error', 'No se pudo eliminar el producto');
+              Alert.alert(t.common.error, 'No se pudo eliminar el producto');
             }
           },
         },
@@ -144,11 +146,11 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Cargando...</Text>
+          <Text style={styles.title}>{t.common.loading}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>
-            Cargando información del producto...
+            {t.common.loading}
           </Text>
         </View>
       </View>
@@ -173,14 +175,14 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           {editing ? (
             <>
               <Button
-                title="Cancelar"
+                title={t.common.cancel}
                 onPress={handleCancel}
                 variant="outline"
                 size="small"
                 style={styles.headerButton}
               />
               <Button
-                title="Guardar"
+                title={t.common.save}
                 onPress={handleSave}
                 variant="primary"
                 size="small"
@@ -189,7 +191,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
             </>
           ) : (
             <Button
-              title="Editar"
+              title={t.common.edit}
               onPress={() => setEditing(true)}
               variant="primary"
               size="small"
@@ -204,7 +206,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           <Text style={styles.sectionTitle}>Información General</Text>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Nombre</Text>
+            <Text style={styles.fieldLabel}>{t.product.name}</Text>
             {editing ? (
               <TextInput
                 style={styles.input}
@@ -218,7 +220,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Categoría</Text>
+            <Text style={styles.fieldLabel}>{t.product.category}</Text>
             {editing ? (
               <TextInput
                 style={styles.input}
@@ -234,7 +236,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Descripción</Text>
+            <Text style={styles.fieldLabel}>{t.product.description}</Text>
             {editing ? (
               <TextInput
                 style={[styles.input, styles.textArea]}
@@ -258,14 +260,14 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
           <Text style={styles.sectionTitle}>Stock y Caducidad</Text>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Stock Actual</Text>
+            <Text style={styles.fieldLabel}>{t.product.currentStock}</Text>
             <Text style={styles.stockValue}>
-              {product.currentStock} unidades
+              {product.currentStock} {t.inventory.units}
             </Text>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Fecha de Caducidad</Text>
+            <Text style={styles.fieldLabel}>{t.product.expiryDate}</Text>
             {editing ? (
               <DatePicker
                 value={formData.expiryDate}
@@ -278,7 +280,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
               <Text style={styles.fieldValue}>
                 {product.expiryDate
                   ? formatDateToDDMMYYYY(product.expiryDate)
-                  : 'Sin fecha'}
+                  : t.inventory.noExpiryDate}
               </Text>
             )}
           </View>
@@ -305,7 +307,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
         {editing && (
           <View style={styles.dangerSection}>
             <Button
-              title="Eliminar Producto"
+              title={t.product.delete}
               onPress={handleDelete}
               variant="danger"
               style={styles.deleteButton}

@@ -14,8 +14,10 @@ import { Input } from '../components/Input';
 import { useNavigation } from '@react-navigation/native';
 import { databaseService } from '../services/database/database';
 import { settingsRepository } from '../services/repositories/settings';
+import { useTranslations } from '../utils/i18n';
 
 const SettingsScreenSimplified: React.FC = () => {
+  const t = useTranslations();
   const navigation = useNavigation();
   const [expiryAlertDays, setExpiryAlertDays] = useState(3);
   const [lowStockAlert, setLowStockAlert] = useState(true);
@@ -68,50 +70,49 @@ const SettingsScreenSimplified: React.FC = () => {
       navigation.goBack();
     } catch (error) {
       console.error('Error saving settings:', error);
-      Alert.alert('Error', 'No se pudo guardar la configuración');
+      Alert.alert(t.common.error, 'No se pudo guardar la configuración');
     }
   };
 
   const handleReset = () => {
-    Alert.alert(
-      'Restablecer Configuración',
-      '¿Estás seguro de que quieres restablecer toda la configuración a los valores por defecto?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Restablecer',
-          style: 'destructive',
-          onPress: async () => {
-            setExpiryAlertDays(3);
-            setLowStockAlert(true);
-            setNotificationsEnabled(true);
+    Alert.alert(t.settings.resetConfirmation, t.settings.resetMessage, [
+      { text: t.common.cancel, style: 'cancel' },
+      {
+        text: t.settings.reset,
+        style: 'destructive',
+        onPress: async () => {
+          setExpiryAlertDays(3);
+          setLowStockAlert(true);
+          setNotificationsEnabled(true);
 
-            // Guardar valores por defecto
-            try {
-              await Promise.all([
-                settingsRepository.set('expiryAlertDays', '3'),
-                settingsRepository.set('lowStockAlert', 'true'),
-                settingsRepository.set('notificationsEnabled', 'true'),
-              ]);
-              // Configuración restablecida silenciosamente
-            } catch (error) {
-              console.error('Error resetting settings:', error);
-              Alert.alert('Error', 'No se pudo restablecer la configuración');
-            }
-          },
+          // Guardar valores por defecto
+          try {
+            await Promise.all([
+              settingsRepository.set('expiryAlertDays', '3'),
+              settingsRepository.set('lowStockAlert', 'true'),
+              settingsRepository.set('notificationsEnabled', 'true'),
+            ]);
+            // Configuración restablecida silenciosamente
+          } catch (error) {
+            console.error('Error resetting settings:', error);
+            Alert.alert(
+              t.common.error,
+              'No se pudo restablecer la configuración',
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   if (loading) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Configuración</Text>
+          <Text style={styles.title}>{t.settings.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando configuración...</Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       </View>
     );
@@ -120,16 +121,16 @@ const SettingsScreenSimplified: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Configuración</Text>
-        <Text style={styles.subtitle}>Personaliza tu experiencia</Text>
+        <Text style={styles.title}>{t.settings.title}</Text>
+        <Text style={styles.subtitle}>{t.settings.subtitle}</Text>
       </View>
 
       <View style={styles.content}>
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Alertas de Caducidad</Text>
+          <Text style={styles.sectionTitle}>{t.settings.expiryAlerts}</Text>
 
           <View style={styles.setting}>
-            <Text style={styles.settingLabel}>Días de anticipación</Text>
+            <Text style={styles.settingLabel}>{t.settings.expiryDays}</Text>
             <Input
               value={expiryAlertDays > 0 ? expiryAlertDays.toString() : ''}
               onChangeText={text => {
@@ -147,17 +148,19 @@ const SettingsScreenSimplified: React.FC = () => {
               placeholder="Ej: 3"
             />
             <Text style={styles.settingDescription}>
-              Recibe alertas cuando los productos caduquen en los próximos días
+              {t.settings.expiryDaysDescription}
             </Text>
           </View>
         </Card>
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Notificaciones</Text>
+          <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
 
           <View style={styles.setting}>
             <View style={styles.switchContainer}>
-              <Text style={styles.settingLabel}>Alertas de stock bajo</Text>
+              <Text style={styles.settingLabel}>
+                {t.settings.lowStockAlerts}
+              </Text>
               <Switch
                 value={lowStockAlert}
                 onValueChange={setLowStockAlert}
@@ -166,14 +169,14 @@ const SettingsScreenSimplified: React.FC = () => {
               />
             </View>
             <Text style={styles.settingDescription}>
-              Recibe notificaciones cuando el stock esté bajo
+              {t.settings.lowStockAlertsDescription}
             </Text>
           </View>
 
           <View style={styles.setting}>
             <View style={styles.switchContainer}>
               <Text style={styles.settingLabel}>
-                Notificaciones habilitadas
+                {t.settings.notificationsEnabled}
               </Text>
               <Switch
                 value={notificationsEnabled}
@@ -183,35 +186,29 @@ const SettingsScreenSimplified: React.FC = () => {
               />
             </View>
             <Text style={styles.settingDescription}>
-              Activa o desactiva todas las notificaciones
+              {t.settings.notificationsEnabledDescription}
             </Text>
           </View>
         </Card>
 
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Datos</Text>
+          <Text style={styles.sectionTitle}>{t.settings.data}</Text>
 
           <View style={styles.setting}>
-            <Text style={styles.settingLabel}>
-              Información de la aplicación
-            </Text>
-            <Text style={styles.appInfo}>
-              Stockly v1.0.0{'\n'}
-              Creada por Adrián Bravo{'\n'}
-              Gestión de inventario simplificada
-            </Text>
+            <Text style={styles.settingLabel}>{t.settings.appInformation}</Text>
+            <Text style={styles.appInfo}>{t.settings.appInfo}</Text>
           </View>
         </Card>
 
         <View style={styles.actions}>
           <Button
-            title="Guardar Cambios"
+            title={t.settings.save}
             onPress={handleSave}
             variant="primary"
             style={styles.actionButton}
           />
           <Button
-            title="Restablecer"
+            title={t.settings.reset}
             onPress={handleReset}
             variant="outline"
             style={styles.actionButton}

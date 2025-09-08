@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  RefreshControl,
   TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +18,7 @@ import { templateRepository } from '../services/repositories/template';
 import { Product, TemplateItem } from '../types';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 import { theme } from '../constants/theme';
+import { useTranslations } from '../utils/i18n';
 
 interface ShoppingItem {
   product: Product;
@@ -27,9 +27,9 @@ interface ShoppingItem {
 }
 
 const ShoppingScreenSimplified: React.FC = () => {
+  const t = useTranslations();
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [purchaseModal, setPurchaseModal] = useState<{
     visible: boolean;
     item: ShoppingItem | null;
@@ -85,12 +85,6 @@ const ShoppingScreenSimplified: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadShoppingList();
-    setRefreshing(false);
-  };
-
   const handlePurchase = async (quantity: number) => {
     if (!purchaseModal.item) return;
 
@@ -106,7 +100,10 @@ const ShoppingScreenSimplified: React.FC = () => {
       await loadShoppingList();
     } catch (error) {
       console.error('Error updating stock:', error);
-      Alert.alert('Error', 'No se pudo actualizar el stock del producto');
+      Alert.alert(
+        t.common.error,
+        'No se pudo actualizar el stock del producto',
+      );
     }
   };
 
@@ -130,13 +127,13 @@ const ShoppingScreenSimplified: React.FC = () => {
   const getPriorityText = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'Alta';
+        return t.shopping.priority.high;
       case 'medium':
-        return 'Media';
+        return t.shopping.priority.medium;
       case 'low':
-        return 'Baja';
+        return t.shopping.priority.low;
       default:
-        return 'Sin prioridad';
+        return t.shopping.priority.none;
     }
   };
 
@@ -152,7 +149,9 @@ const ShoppingScreenSimplified: React.FC = () => {
           <View style={styles.itemHeader}>
             <View style={styles.itemTitleContainer}>
               <Text style={styles.itemName}>{product.name}</Text>
-              <Text style={styles.itemCategory}>📂 {product.category}</Text>
+              <Text style={styles.itemCategory}>
+                📂 {product.category || t.shopping.noCategory}
+              </Text>
             </View>
             <Badge
               text={getPriorityText(template.priority)}
@@ -181,15 +180,15 @@ const ShoppingScreenSimplified: React.FC = () => {
 
           <View style={styles.stockInfo}>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Stock actual</Text>
+              <Text style={styles.stockLabel}>{t.shopping.currentStock}</Text>
               <Text style={styles.stockValue}>{product.currentStock}</Text>
             </View>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Stock ideal</Text>
+              <Text style={styles.stockLabel}>{t.shopping.idealStock}</Text>
               <Text style={styles.stockValue}>{template.idealQuantity}</Text>
             </View>
             <View style={styles.stockItem}>
-              <Text style={styles.stockLabel}>Necesitas</Text>
+              <Text style={styles.stockLabel}>{t.shopping.needed}</Text>
               <Text style={[styles.stockValue, styles.neededValue]}>
                 {needed}
               </Text>
@@ -199,7 +198,8 @@ const ShoppingScreenSimplified: React.FC = () => {
           {product.expiryDate && (
             <View style={styles.itemFooter}>
               <Text style={styles.itemExpiry}>
-                🗓️ Caduca: {formatDateToDDMMYYYY(product.expiryDate)}
+                🗓️ {t.shopping.expires}:{' '}
+                {formatDateToDDMMYYYY(product.expiryDate)}
               </Text>
             </View>
           )}
@@ -211,7 +211,7 @@ const ShoppingScreenSimplified: React.FC = () => {
   const renderEmptyState = () => (
     <Card style={styles.emptyCard} variant="filled">
       <Text style={styles.emptyIcon}>🎉</Text>
-      <Text style={styles.emptyTitle}>¡Lista de compra vacía!</Text>
+      <Text style={styles.emptyTitle}>{t.shopping.noItems}</Text>
       <Text style={styles.emptyDescription}>
         No hay productos que necesiten reposición. Tu inventario está al día.
       </Text>
@@ -222,11 +222,11 @@ const ShoppingScreenSimplified: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>🛒 Lista de Compra</Text>
+          <Text style={styles.title}>🛒 {t.shopping.title}</Text>
           <Text style={styles.subtitle}>Tu lista inteligente de compras</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>🔄 Cargando lista...</Text>
+          <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
       </View>
     );
@@ -235,10 +235,8 @@ const ShoppingScreenSimplified: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>🛒 Lista de Compra</Text>
-        <Text style={styles.subtitle}>
-          Productos que necesitas comprar según las plantillas ideales
-        </Text>
+        <Text style={styles.title}>🛒 {t.shopping.title}</Text>
+        <Text style={styles.subtitle}>{t.shopping.subtitle}</Text>
       </View>
 
       <FlatList
@@ -246,9 +244,6 @@ const ShoppingScreenSimplified: React.FC = () => {
         renderItem={renderShoppingItem}
         keyExtractor={item => item.product.id}
         contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />

@@ -17,8 +17,10 @@ import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
 import { Product, TemplateItem } from '../types';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
+import { useTranslations } from '../utils/i18n';
 
 const ExportScreenSimplified: React.FC = () => {
+  const t = useTranslations();
   const [products, setProducts] = useState<Product[]>([]);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ const ExportScreenSimplified: React.FC = () => {
       setTemplates(templatesData);
     } catch (error) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos');
+      Alert.alert(t.common.error, 'No se pudieron cargar los datos');
     } finally {
       setLoading(false);
     }
@@ -51,9 +53,7 @@ const ExportScreenSimplified: React.FC = () => {
 
   const generateInventoryJSON = () => {
     const inventoryData = products.map(product => ({
-      id: product.id,
       nombre: product.name,
-      categoria: product.category,
       descripcion: product.description || '',
       stock_actual: product.currentStock,
       fecha_caducidad: product.expiryDate
@@ -103,7 +103,7 @@ const ExportScreenSimplified: React.FC = () => {
       });
     } catch (error) {
       console.error('Error exporting JSON:', error);
-      Alert.alert('Error', 'No se pudo exportar el archivo JSON');
+      Alert.alert(t.common.error, 'No se pudo exportar el archivo JSON');
     }
   };
 
@@ -112,7 +112,7 @@ const ExportScreenSimplified: React.FC = () => {
       const shoppingItems = generateShoppingList();
 
       if (shoppingItems.length === 0) {
-        Alert.alert('Lista vacía', 'No hay productos con stock bajo');
+        Alert.alert(t.export.emptyList, t.export.noLowStock);
         return;
       }
 
@@ -136,7 +136,7 @@ const ExportScreenSimplified: React.FC = () => {
       });
     } catch (error) {
       console.error('Error exporting shopping list:', error);
-      Alert.alert('Error', 'No se pudo exportar la lista de compra');
+      Alert.alert(t.common.error, 'No se pudo exportar la lista de compra');
     }
   };
 
@@ -144,10 +144,10 @@ const ExportScreenSimplified: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Exportar Datos</Text>
+          <Text style={styles.title}>{t.export.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando datos...</Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       </View>
     );
@@ -156,24 +156,24 @@ const ExportScreenSimplified: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Exportar Datos</Text>
+        <Text style={styles.title}>{t.export.title}</Text>
         <Text style={styles.subtitle}>
-          Exporta tu inventario y genera listas de compra
+          {t.export.subtitle}
         </Text>
       </View>
 
       <View style={styles.content}>
         {/* Exportar Inventario */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>📦 Exportar Inventario</Text>
+          <Text style={styles.sectionTitle}>📦 {t.export.exportInventory}</Text>
           <Text style={styles.sectionDescription}>
-            Exporta todos los productos en formato JSON con información completa
+            {t.export.exportInventoryDescription}
           </Text>
           <Text style={styles.statsText}>
-            {products.length} productos disponibles para exportar
+            {products.length} {t.export.products.toLowerCase()} {t.export.availableToExport}
           </Text>
           <Button
-            title="Exportar JSON"
+            title={t.export.exportJson}
             onPress={exportInventoryJSON}
             variant="primary"
             style={styles.exportButton}
@@ -182,16 +182,15 @@ const ExportScreenSimplified: React.FC = () => {
 
         {/* Lista de Compra */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>🛒 Lista de Compra</Text>
+          <Text style={styles.sectionTitle}>🛒 {t.export.shoppingList}</Text>
           <Text style={styles.sectionDescription}>
-            Genera una lista de productos que necesitas comprar según las
-            plantillas ideales
+            {t.export.shoppingListDescription}
           </Text>
           <Text style={styles.statsText}>
-            {generateShoppingList().length} productos necesitan reposición
+            {generateShoppingList().length} {t.export.products.toLowerCase()} {t.export.needRestocking}
           </Text>
           <Button
-            title="Generar Lista"
+            title={t.export.generateList}
             onPress={exportShoppingList}
             variant="outline"
             style={styles.exportButton}
@@ -200,27 +199,27 @@ const ExportScreenSimplified: React.FC = () => {
 
         {/* Vista previa de datos */}
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Resumen de Datos</Text>
+          <Text style={styles.sectionTitle}>📊 {t.export.summary}</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNumber}>{products.length}</Text>
-              <Text style={styles.summaryLabel}>Productos</Text>
+              <Text style={styles.summaryLabel}>{t.export.products}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNumber}>
                 {products.reduce((sum, p) => sum + p.currentStock, 0)}
               </Text>
-              <Text style={styles.summaryLabel}>Unidades</Text>
+              <Text style={styles.summaryLabel}>{t.export.units}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNumber}>{templates.length}</Text>
-              <Text style={styles.summaryLabel}>Plantillas</Text>
+              <Text style={styles.summaryLabel}>{t.export.templates}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryNumber}>
                 {generateShoppingList().length}
               </Text>
-              <Text style={styles.summaryLabel}>Por Comprar</Text>
+              <Text style={styles.summaryLabel}>{t.export.toBuy}</Text>
             </View>
           </View>
         </Card>

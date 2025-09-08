@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
-  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -23,6 +22,7 @@ import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Product } from '../types';
 import { theme } from '../constants/theme';
+import { useTranslations } from '../utils/i18n';
 
 type InventoryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -34,10 +34,10 @@ interface Props {
 }
 
 export default function InventoryScreen({ navigation }: Props) {
+  const t = useTranslations();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,7 +55,7 @@ export default function InventoryScreen({ navigation }: Props) {
       setFilteredProducts(allProducts);
     } catch (error) {
       console.error('Error loading products:', error);
-      Alert.alert('Error', 'No se pudieron cargar los productos');
+      Alert.alert(t.common.error, 'No se pudieron cargar los productos');
     } finally {
       setLoading(false);
     }
@@ -76,12 +76,6 @@ export default function InventoryScreen({ navigation }: Props) {
           product.description.toLowerCase().includes(query.toLowerCase())),
     );
     setFilteredProducts(filtered);
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadProducts();
-    setRefreshing(false);
   };
 
   const handleAddProduct = () => {
@@ -120,7 +114,7 @@ export default function InventoryScreen({ navigation }: Props) {
       console.error('Error adding stock:', error);
       // Revertir cambios en caso de error
       await loadProducts();
-      Alert.alert('Error', 'No se pudo agregar stock');
+      Alert.alert(t.common.error, 'No se pudo agregar stock');
     }
   };
 
@@ -148,17 +142,17 @@ export default function InventoryScreen({ navigation }: Props) {
       console.error('Error removing stock:', error);
       // Revertir cambios en caso de error
       await loadProducts();
-      Alert.alert('Error', 'No se pudo quitar stock');
+      Alert.alert(t.common.error, 'No se pudo quitar stock');
     }
   };
 
   const getExpiryStatus = (expiryDate?: string) => {
     if (!expiryDate) {
-      return { text: 'Sin fecha', variant: 'default' as const };
+      return { text: t.inventory.noExpiryDate, variant: 'default' as const };
     }
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
     if (daysUntilExpiry < 0)
-      return { text: 'Caducado', variant: 'danger' as const };
+      return { text: t.inventory.expired, variant: 'danger' as const };
     if (daysUntilExpiry <= 3)
       return { text: `${daysUntilExpiry}d`, variant: 'warning' as const };
     if (daysUntilExpiry <= 7)
@@ -218,7 +212,7 @@ export default function InventoryScreen({ navigation }: Props) {
             </TouchableOpacity>
             <View style={styles.stockDisplay}>
               <Text style={styles.stockNumber}>{item.currentStock}</Text>
-              <Text style={styles.stockLabel}>unidades</Text>
+              <Text style={styles.stockLabel}>{t.inventory.units}</Text>
             </View>
             <TouchableOpacity
               onPress={() => handleAddStock(item)}
@@ -248,7 +242,7 @@ export default function InventoryScreen({ navigation }: Props) {
     <Card style={styles.emptyCard} variant="filled">
       <Text style={styles.emptyIcon}>{searchQuery ? '🔍' : '📦'}</Text>
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'No se encontraron productos' : 'No hay productos'}
+        {searchQuery ? 'No se encontraron productos' : t.inventory.noProducts}
       </Text>
       <Text style={styles.emptyDescription}>
         {searchQuery
@@ -257,7 +251,7 @@ export default function InventoryScreen({ navigation }: Props) {
       </Text>
       {!searchQuery && (
         <Button
-          title="Agregar Producto"
+          title={t.inventory.addProduct}
           onPress={handleAddProduct}
           variant="primary"
           size="large"
@@ -272,11 +266,11 @@ export default function InventoryScreen({ navigation }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>📦 Inventario</Text>
-          <Text style={styles.subtitle}>Gestiona tus productos</Text>
+          <Text style={styles.title}>📦 {t.inventory.title}</Text>
+          <Text style={styles.subtitle}>{t.inventory.subtitle}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>🔄 Cargando productos...</Text>
+          <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
       </View>
     );
@@ -286,11 +280,11 @@ export default function InventoryScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>📦 Inventario</Text>
-          <Text style={styles.subtitle}>Gestiona tus productos</Text>
+          <Text style={styles.title}>📦 {t.inventory.title}</Text>
+          <Text style={styles.subtitle}>{t.inventory.subtitle}</Text>
         </View>
         <Button
-          title="Agregar"
+          title={t.common.add}
           onPress={handleAddProduct}
           variant="primary"
           size="medium"
@@ -300,7 +294,7 @@ export default function InventoryScreen({ navigation }: Props) {
       <SearchInput
         value={searchQuery}
         onChangeText={filterProducts}
-        placeholder="Buscar productos..."
+        placeholder={t.inventory.searchPlaceholder}
         icon="🔍"
       />
 
@@ -309,9 +303,6 @@ export default function InventoryScreen({ navigation }: Props) {
         renderItem={renderProductItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />

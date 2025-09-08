@@ -20,10 +20,12 @@ Una aplicación móvil completa para gestionar tu inventario de alimentos person
 ### Opción 1: Android Emulator (Recomendado)
 
 1. **Instalar Android Studio**:
+
    - Descarga desde: https://developer.android.com/studio
    - Instala y configura el SDK de Android
 
 2. **Crear un emulador**:
+
    - Abre Android Studio
    - Ve a AVD Manager
    - Crea un nuevo emulador (recomendado: Pixel 9 con Android 16)
@@ -31,15 +33,17 @@ Una aplicación móvil completa para gestionar tu inventario de alimentos person
 3. **Ejecutar la aplicación**:
    ```bash
    cd /home/abravo/Projects/StocklyApp
-   npx expo start --android
+   npx expo start --android --clear
    ```
 
 ### Opción 2: Dispositivo Físico con Expo Go
 
 1. **Instalar Expo Go**:
+
    - Descarga desde Google Play Store o App Store
 
 2. **Ejecutar la aplicación**:
+
    ```bash
    cd /home/abravo/Projects/StocklyApp
    npx expo start
@@ -108,17 +112,20 @@ StocklyApp/
 ## 📝 Scripts Disponibles
 
 ### Desarrollo
+
 - `npx expo start`: Inicia el servidor de desarrollo Expo
 - `npx expo start --android`: Ejecuta en Android emulator
 - `npx expo start --ios`: Ejecuta en iOS simulator
 - `npx expo start --web`: Ejecuta en navegador web
 
 ### Generación de APK
+
 - `eas build --platform android --profile production`: Genera APK de producción
 - `eas build --platform android --profile preview`: Genera APK de preview
 - `eas build --platform android --profile development`: Genera APK de desarrollo
 
 ### Scripts Personalizados
+
 - `./scripts/build-apk.sh`: Script automatizado para generar APK
 - `node scripts/generate-icons.js`: Guía para generar iconos Android
 
@@ -154,11 +161,13 @@ npx react-native start --reset-cache
 ### Método 1: EAS Build (Recomendado)
 
 1. **Asegúrate de estar logueado**:
+
    ```bash
    eas login
    ```
 
 2. **Generar APK de producción**:
+
    ```bash
    eas build --platform android --profile production
    ```

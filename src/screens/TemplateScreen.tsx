@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
-  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -20,13 +19,14 @@ import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
 import { templateRepository } from '../services/repositories/template';
 import { Product, TemplateItem } from '../types';
+import { useTranslations } from '../utils/i18n';
 
 const TemplateScreenSimplified: React.FC = () => {
+  const t = useTranslations();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [idealQuantities, setIdealQuantities] = useState<
@@ -81,16 +81,10 @@ const TemplateScreenSimplified: React.FC = () => {
       setIdealQuantities(quantities);
     } catch (error) {
       console.error('Error loading template data:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos');
+      Alert.alert(t.common.error, 'No se pudieron cargar los datos');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
   };
 
   const handleProductAdded = () => {
@@ -173,19 +167,25 @@ const TemplateScreenSimplified: React.FC = () => {
       <Card style={styles.itemCard}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemName}>{item.name}</Text>
-          {isLowStock && <Badge text="Stock bajo" variant="warning" />}
+          {isLowStock && (
+            <Badge text={t.dashboard.lowStock} variant="warning" />
+          )}
         </View>
 
         <View style={styles.itemDetails}>
-          <Text style={styles.itemCategory}>📂 {item.category}</Text>
+          <Text style={styles.itemCategory}>
+            📂 {item.category || t.templates.noCategory}
+          </Text>
           <Text style={styles.stockInfo}>
-            Stock actual: {item.currentStock} unidades
+            {t.templates.currentStock}: {item.currentStock} {t.inventory.units}
           </Text>
         </View>
 
         <View style={styles.templateControls}>
           <View style={styles.quantitySection}>
-            <Text style={styles.controlLabel}>Stock ideal:</Text>
+            <Text style={styles.controlLabel}>
+              {t.templates.idealQuantity}:
+            </Text>
             <Input
               value={idealQuantityString}
               onChangeText={text => handleQuantityChange(item.id, text)}
@@ -203,7 +203,7 @@ const TemplateScreenSimplified: React.FC = () => {
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'No se encontraron productos' : 'No hay productos'}
+        {searchQuery ? 'No se encontraron productos' : t.templates.noProducts}
       </Text>
       <Text style={styles.emptyDescription}>
         {searchQuery
@@ -212,7 +212,7 @@ const TemplateScreenSimplified: React.FC = () => {
       </Text>
       {!searchQuery && (
         <Button
-          title="Agregar Producto"
+          title={t.templates.addProduct}
           onPress={() => setShowAddModal(true)}
           style={styles.emptyButton}
         />
@@ -224,10 +224,10 @@ const TemplateScreenSimplified: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Plantillas Ideales</Text>
+          <Text style={styles.title}>{t.templates.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando plantillas...</Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       </View>
     );
@@ -236,9 +236,9 @@ const TemplateScreenSimplified: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Plantillas Ideales</Text>
+        <Text style={styles.title}>{t.templates.title}</Text>
         <Button
-          title="Agregar Producto"
+          title={t.templates.addProduct}
           onPress={() => setShowAddModal(true)}
           variant="primary"
           size="small"
@@ -247,12 +247,10 @@ const TemplateScreenSimplified: React.FC = () => {
       <SearchInput
         value={searchQuery}
         onChangeText={filterProducts}
-        placeholder="Buscar productos..."
+        placeholder={t.templates.searchPlaceholder}
       />
       <View style={styles.subtitleContainer}>
-        <Text style={styles.subtitle}>
-          Configura el stock ideal para cada producto
-        </Text>
+        <Text style={styles.subtitle}>{t.templates.subtitle}</Text>
       </View>
 
       <FlatList
@@ -260,9 +258,6 @@ const TemplateScreenSimplified: React.FC = () => {
         renderItem={renderTemplateItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />

@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
+import { useTranslations } from '../utils/i18n';
 
 // Screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -29,6 +30,8 @@ export type RootStackParamList = {
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
+  const t = useTranslations();
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
@@ -94,49 +97,49 @@ const AppNavigator: React.FC = () => {
             name="Inventory"
             component={InventoryScreen}
             options={{
-              title: '📦 Inventario',
+              title: `📦 ${t.inventory.title}`,
             }}
           />
           <Stack.Screen
             name="ProductDetail"
             component={ProductDetailScreen}
             options={{
-              title: '🔍 Detalle del Producto',
+              title: `🔍 ${t.product.title}`,
             }}
           />
           <Stack.Screen
             name="Template"
             component={TemplateScreen}
             options={{
-              title: '📋 Plantilla Ideal',
+              title: `📋 ${t.templates.title}`,
             }}
           />
           <Stack.Screen
             name="Shopping"
             component={ShoppingScreen}
             options={{
-              title: '🛒 Lista de la Compra',
+              title: `🛒 ${t.shopping.title}`,
             }}
           />
           <Stack.Screen
             name="Expiry"
             component={ExpiryScreen}
             options={{
-              title: '⏰ Próximos a Caducar',
+              title: `⏰ ${t.expiry.title}`,
             }}
           />
           <Stack.Screen
             name="Export"
             component={ExportScreen}
             options={{
-              title: '📊 Exportar Datos',
+              title: `📊 ${t.export.title}`,
             }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
             options={{
-              title: '⚙️ Configuración',
+              title: `⚙️ ${t.settings.title}`,
             }}
           />
         </Stack.Navigator>

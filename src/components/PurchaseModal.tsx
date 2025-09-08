@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Input } from './Input';
+import { useTranslations } from '../utils/i18n';
 
 interface PurchaseModalProps {
   visible: boolean;
@@ -21,13 +22,14 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   needed,
   currentStock,
 }) => {
+  const t = useTranslations();
   const [quantity, setQuantity] = useState('');
 
   const handlePurchase = () => {
     const purchaseQuantity = parseInt(quantity) || 0;
 
     if (purchaseQuantity <= 0) {
-      Alert.alert('Error', 'La cantidad debe ser mayor a 0');
+      Alert.alert(t.common.error, 'La cantidad debe ser mayor a 0');
       return;
     }
 
@@ -41,42 +43,44 @@ export const PurchaseModal: React.FC<PurchaseModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Marcar como Comprado">
+    <Modal visible={visible} onClose={handleClose} title={t.purchase.title}>
       <View style={styles.container}>
         <Text style={styles.productName}>{productName}</Text>
 
         <View style={styles.infoContainer}>
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Stock actual:</Text>
-            <Text style={styles.infoValue}>{currentStock} unidades</Text>
+            <Text style={styles.infoLabel}>{t.shopping.currentStock}:</Text>
+            <Text style={styles.infoValue}>
+              {currentStock} {t.inventory.units}
+            </Text>
           </View>
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Necesitas:</Text>
-            <Text style={styles.infoValue}>{needed} unidades</Text>
+            <Text style={styles.infoLabel}>{t.shopping.needed}:</Text>
+            <Text style={styles.infoValue}>
+              {needed} {t.inventory.units}
+            </Text>
           </View>
         </View>
 
         <Input
-          label="Cantidad comprada"
+          label={t.purchase.quantity}
           value={quantity}
           onChangeText={setQuantity}
           keyboardType="number-pad"
-          placeholder={`Ejemplo: ${needed}`}
+          placeholder={t.purchase.quantityPlaceholder}
         />
 
-        <Text style={styles.helpText}>
-          Esta cantidad se sumará al stock actual del producto
-        </Text>
+        <Text style={styles.helpText}>{t.purchase.description}</Text>
 
         <View style={styles.buttonContainer}>
           <Button
-            title="Cancelar"
+            title={t.common.cancel}
             onPress={handleClose}
             variant="outline"
             style={styles.button}
           />
           <Button
-            title="Marcar Comprado"
+            title={t.purchase.markPurchased}
             onPress={handlePurchase}
             variant="primary"
             style={styles.button}

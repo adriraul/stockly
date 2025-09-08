@@ -6,6 +6,7 @@ import { Input } from './Input';
 import { DatePicker } from './DatePicker';
 import { productsRepository } from '../services/repositories/products';
 import { parseDateFromDDMMYYYY, isValidDDMMYYYY } from '../utils/dateUtils';
+import { useTranslations } from '../utils/i18n';
 
 interface AddProductModalProps {
   visible: boolean;
@@ -18,6 +19,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   onClose,
   onProductAdded,
 }) => {
+  const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -33,7 +35,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      Alert.alert('Error', 'El nombre del producto es obligatorio');
+      Alert.alert(t.common.error, 'El nombre del producto es obligatorio');
       return;
     }
 
@@ -42,7 +44,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
 
     const initialStock = parseInt(formData.initialStock) || 0;
     if (initialStock < 0) {
-      Alert.alert('Error', 'El stock inicial no puede ser negativo');
+      Alert.alert(t.common.error, 'El stock inicial no puede ser negativo');
       return;
     }
 
@@ -74,40 +76,40 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       });
     } catch (error) {
       console.error('Error adding product:', error);
-      Alert.alert('Error', 'No se pudo agregar el producto');
+      Alert.alert(t.common.error, 'No se pudo agregar el producto');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Agregar Producto">
+    <Modal visible={visible} onClose={onClose} title={t.addProduct.title}>
       <View style={styles.form}>
         <Input
-          label="Nombre del Producto *"
+          label={`${t.addProduct.name} *`}
           value={formData.name}
           onChangeText={value => handleInputChange('name', value)}
-          placeholder="Ej: Leche, Pan, Manzanas..."
+          placeholder={t.addProduct.namePlaceholder}
         />
 
         <Input
-          label="Descripción (opcional)"
+          label={`${t.addProduct.description} (${t.addProduct.optional})`}
           value={formData.description}
           onChangeText={value => handleInputChange('description', value)}
-          placeholder="Ej: Leche entera de 1L, Pan integral..."
+          placeholder={t.addProduct.descriptionPlaceholder}
           multiline
           numberOfLines={2}
         />
 
         <Input
-          label="Categoría (opcional)"
+          label={`${t.addProduct.category} (${t.addProduct.optional})`}
           value={formData.category}
           onChangeText={value => handleInputChange('category', value)}
-          placeholder="Ej: Lácteos, Panadería, Frutas..."
+          placeholder={t.addProduct.categoryPlaceholder}
         />
 
         <Input
-          label="Stock Inicial (unidades)"
+          label={`${t.addProduct.initialStock} (${t.inventory.units})`}
           value={formData.initialStock}
           onChangeText={value => handleInputChange('initialStock', value)}
           keyboardType="number-pad"
@@ -115,23 +117,23 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
         />
 
         <DatePicker
-          label="Fecha de Caducidad (opcional)"
+          label={`${t.addProduct.expiryDate} (${t.addProduct.optional})`}
           value={formData.expiryDate}
           onChange={value =>
             setFormData(prev => ({ ...prev, expiryDate: value }))
           }
-          placeholder="Seleccionar fecha"
+          placeholder={t.addProduct.selectDate}
         />
 
         <View style={styles.buttonContainer}>
           <Button
-            title="Cancelar"
+            title={t.common.cancel}
             onPress={onClose}
             variant="outline"
             style={styles.button}
           />
           <Button
-            title={loading ? 'Agregando...' : 'Agregar Producto'}
+            title={loading ? t.addProduct.adding : t.addProduct.add}
             onPress={handleSubmit}
             variant="primary"
             style={styles.button}

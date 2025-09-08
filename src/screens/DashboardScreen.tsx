@@ -16,6 +16,7 @@ import { businessLogicService } from '../services/businessLogic';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Product } from '../types';
 import { theme } from '../constants/theme';
+import { useTranslations } from '../utils/i18n';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ interface DashboardStats {
 }
 
 export default function DashboardScreen({ navigation }: Props) {
+  const t = useTranslations();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     expiringSoon: 0,
@@ -59,7 +61,7 @@ export default function DashboardScreen({ navigation }: Props) {
       await loadDashboardData();
     } catch (error) {
       console.error('Error initializing app:', error);
-      Alert.alert('Error', 'No se pudo inicializar la aplicación');
+      Alert.alert(t.common.error, 'No se pudo inicializar la aplicación');
     } finally {
       setLoading(false);
     }
@@ -100,7 +102,7 @@ export default function DashboardScreen({ navigation }: Props) {
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      Alert.alert('Error', 'No se pudieron cargar las estadísticas');
+      Alert.alert(t.common.error, 'No se pudieron cargar las estadísticas');
     }
   };
 
@@ -117,12 +119,10 @@ export default function DashboardScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.header}>
           <Logo size={80} style={styles.logo} />
-          <Text style={styles.subtitle}>
-            Tu asistente de inventario inteligente
-          </Text>
+          <Text style={styles.subtitle}>{t.dashboard.subtitle}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>🔄 Cargando estadísticas...</Text>
+          <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
       </View>
     );
@@ -132,27 +132,25 @@ export default function DashboardScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Logo size={80} style={styles.logo} />
-        <Text style={styles.subtitle}>
-          Tu asistente de inventario inteligente
-        </Text>
+        <Text style={styles.subtitle}>{t.dashboard.subtitle}</Text>
       </View>
 
       <View style={styles.content}>
         {/* Estadísticas principales */}
         <View style={styles.statsGrid}>
           <StatCard
-            title="Caducan pronto"
+            title={t.dashboard.expiringSoon}
             value={stats.expiringSoon}
-            subtitle={`En los próximos ${expiryAlertDays} días`}
+            subtitle={`${t.dashboard.inNextDays} ${expiryAlertDays} días`}
             icon="⏰"
             color={stats.expiringSoon > 0 ? 'warning' : 'success'}
             delay={0}
           />
 
           <StatCard
-            title="Stock bajo"
+            title={t.dashboard.lowStock}
             value={stats.lowStock}
-            subtitle="Necesitan reposición"
+            subtitle={t.dashboard.needRestocking}
             icon="📦"
             color={stats.lowStock > 0 ? 'error' : 'success'}
             delay={100}
@@ -164,7 +162,7 @@ export default function DashboardScreen({ navigation }: Props) {
           {/* Acciones principales */}
           <View style={styles.primaryActions}>
             <Button
-              title="Ver Inventario"
+              title={t.dashboard.viewInventory}
               onPress={() => handleQuickAction('Inventory')}
               variant="primary"
               size="large"
@@ -172,7 +170,7 @@ export default function DashboardScreen({ navigation }: Props) {
               style={styles.primaryButton}
             />
             <Button
-              title="Lista de Compra"
+              title={t.dashboard.shoppingList}
               onPress={() => handleQuickAction('Shopping')}
               variant="primary"
               size="large"
@@ -184,7 +182,7 @@ export default function DashboardScreen({ navigation }: Props) {
           {/* Plantillas */}
           <View style={styles.templateSection}>
             <Button
-              title="Plantillas Ideales"
+              title={t.dashboard.idealTemplates}
               onPress={() => handleQuickAction('Template')}
               variant="outline"
               size="small"
@@ -196,7 +194,7 @@ export default function DashboardScreen({ navigation }: Props) {
           {/* Acciones secundarias */}
           <View style={styles.secondaryActions}>
             <Button
-              title="Exportar"
+              title={t.dashboard.export}
               onPress={() => handleQuickAction('Export')}
               variant="ghost"
               size="small"
@@ -204,7 +202,7 @@ export default function DashboardScreen({ navigation }: Props) {
               style={styles.secondaryButton}
             />
             <Button
-              title="Caducados"
+              title={t.dashboard.expired}
               onPress={() => handleQuickAction('Expiry')}
               variant="ghost"
               size="small"
@@ -225,30 +223,32 @@ export default function DashboardScreen({ navigation }: Props) {
         {(stats.expiringSoon > 0 || stats.lowStock > 0) && (
           <Card style={styles.section} variant="outlined">
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>⚠️ Alertas</Text>
-              <Text style={styles.sectionSubtitle}>Acción requerida</Text>
+              <Text style={styles.sectionTitle}>⚠️ {t.dashboard.alerts}</Text>
+              <Text style={styles.sectionSubtitle}>
+                {t.dashboard.actionRequired}
+              </Text>
             </View>
             <View style={styles.alertsContainer}>
               {stats.expiringSoon > 0 && (
                 <View style={styles.alert}>
                   <Badge
-                    text={`${stats.expiringSoon} productos`}
+                    text={`${stats.expiringSoon} ${t.dashboard.products}`}
                     variant="warning"
                     icon="⏰"
                   />
                   <Text style={styles.alertText}>
-                    caducan en los próximos {expiryAlertDays} días
+                    {t.expiry.subtitle} {expiryAlertDays} días
                   </Text>
                 </View>
               )}
               {stats.lowStock > 0 && (
                 <View style={styles.alert}>
                   <Badge
-                    text={`${stats.lowStock} productos`}
+                    text={`${stats.lowStock} ${t.dashboard.products}`}
                     variant="danger"
                     icon="📦"
                   />
-                  <Text style={styles.alertText}>tienen stock bajo</Text>
+                  <Text style={styles.alertText}>{t.dashboard.lowStock}</Text>
                 </View>
               )}
             </View>

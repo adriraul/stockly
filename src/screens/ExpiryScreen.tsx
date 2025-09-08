@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  RefreshControl,
   TouchableOpacity,
   Alert,
 } from 'react-native';
@@ -19,11 +18,12 @@ import { settingsRepository } from '../services/repositories/settings';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 import { businessLogicService } from '../services/businessLogic';
 import { Product } from '../types';
+import { useTranslations } from '../utils/i18n';
 
 const ExpiryScreenSimplified: React.FC = () => {
+  const t = useTranslations();
   const [expiringItems, setExpiringItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [expiryAlertDays, setExpiryAlertDays] = useState(7);
 
   useFocusEffect(
@@ -76,12 +76,6 @@ const ExpiryScreenSimplified: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadExpiringItems();
-    setRefreshing(false);
-  };
-
   const getExpiryStatus = (expiryDate: string) => {
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
     if (daysUntilExpiry < 0)
@@ -103,9 +97,11 @@ const ExpiryScreenSimplified: React.FC = () => {
           <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
         </View>
         <View style={styles.itemDetails}>
-          <Text style={styles.itemCategory}>📂 {item.category}</Text>
+          <Text style={styles.itemCategory}>
+            📂 {item.category || t.templates.noCategory}
+          </Text>
           <Text style={styles.itemStock}>
-            Stock: {item.currentStock} unidades
+            Stock: {item.currentStock} {t.inventory.units}
           </Text>
           {item.description && (
             <Text style={styles.itemDescription}>{item.description}</Text>
@@ -113,7 +109,7 @@ const ExpiryScreenSimplified: React.FC = () => {
         </View>
         <View style={styles.itemFooter}>
           <Text style={styles.itemExpiry}>
-            Caduca: {formatDateToDDMMYYYY(item.expiryDate!)}
+            {t.expiry.expires}: {formatDateToDDMMYYYY(item.expiryDate!)}
           </Text>
         </View>
       </Card>
@@ -123,10 +119,7 @@ const ExpiryScreenSimplified: React.FC = () => {
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>¡Excelente!</Text>
-      <Text style={styles.emptyDescription}>
-        No tienes productos próximos a caducar en los próximos {expiryAlertDays}{' '}
-        días
-      </Text>
+      <Text style={styles.emptyDescription}>{t.expiry.noExpiring}</Text>
     </Card>
   );
 
@@ -134,10 +127,10 @@ const ExpiryScreenSimplified: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Próximos a Caducar</Text>
+          <Text style={styles.title}>{t.expiry.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Cargando productos...</Text>
+          <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
       </View>
     );
@@ -146,10 +139,9 @@ const ExpiryScreenSimplified: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Próximos a Caducar</Text>
+        <Text style={styles.title}>{t.expiry.title}</Text>
         <Text style={styles.subtitle}>
-          {expiringItems.length} productos caducan en los próximos{' '}
-          {expiryAlertDays} días
+          {expiringItems.length} {t.expiry.subtitle} {expiryAlertDays} días
         </Text>
       </View>
 
@@ -158,9 +150,6 @@ const ExpiryScreenSimplified: React.FC = () => {
         renderItem={renderExpiringItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
