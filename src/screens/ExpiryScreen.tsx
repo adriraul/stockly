@@ -44,7 +44,6 @@ const ExpiryScreenSimplified: React.FC = () => {
 
       // Obtener días de anticipación configurados (por defecto 7)
       const alertDays = expiryAlertDays ? parseInt(expiryAlertDays, 10) : 7;
-      console.log('Expiry - Días de anticipación configurados:', alertDays);
       setExpiryAlertDays(alertDays);
 
       // Filtrar productos que caducan en los próximos X días (configurable)

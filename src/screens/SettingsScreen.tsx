@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { databaseService } from '../services/database/database';
 import { settingsRepository } from '../services/repositories/settings';
 import { useTranslations } from '../utils/i18n';
@@ -50,30 +50,6 @@ const SettingsScreenSimplified: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      // Guardar configuración en la base de datos
-      await Promise.all([
-        settingsRepository.set('expiryAlertDays', expiryAlertDays.toString()),
-        settingsRepository.set('lowStockAlert', lowStockAlert.toString()),
-        settingsRepository.set(
-          'notificationsEnabled',
-          notificationsEnabled.toString(),
-        ),
-      ]);
-
-      // Configuración guardada silenciosamente
-      console.log(
-        'Settings - Días de anticipación guardados:',
-        expiryAlertDays,
-      );
-      navigation.goBack();
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      Alert.alert(t.common.error, 'No se pudo guardar la configuración');
-    }
-  };
-
   const handleReset = () => {
     Alert.alert(t.settings.resetConfirmation, t.settings.resetMessage, [
       { text: t.common.cancel, style: 'cancel' },
@@ -104,6 +80,35 @@ const SettingsScreenSimplified: React.FC = () => {
       },
     ]);
   };
+
+  // Función para guardar automáticamente sin mostrar alertas
+  const autoSave = async () => {
+    try {
+      await Promise.all([
+        settingsRepository.set('expiryAlertDays', expiryAlertDays.toString()),
+        settingsRepository.set('lowStockAlert', lowStockAlert.toString()),
+        settingsRepository.set(
+          'notificationsEnabled',
+          notificationsEnabled.toString(),
+        ),
+      ]);
+    } catch (error) {
+      console.error('Error auto-saving settings:', error);
+    }
+  };
+
+  // Guardar automáticamente al salir de la pantalla
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Esta función se ejecuta cuando el usuario sale de la pantalla
+        // Esperamos a que se complete el guardado antes de continuar
+        autoSave().catch(error => {
+          console.error('Error in auto-save cleanup:', error);
+        });
+      };
+    }, [expiryAlertDays, lowStockAlert, notificationsEnabled]),
+  );
 
   if (loading) {
     return (
@@ -201,12 +206,6 @@ const SettingsScreenSimplified: React.FC = () => {
         </Card>
 
         <View style={styles.actions}>
-          <Button
-            title={t.settings.save}
-            onPress={handleSave}
-            variant="primary"
-            style={styles.actionButton}
-          />
           <Button
             title={t.settings.reset}
             onPress={handleReset}

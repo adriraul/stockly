@@ -50,7 +50,12 @@ export default function DashboardScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       if (!loading) {
-        loadDashboardData();
+        // Pequeño delay para permitir que se complete el guardado automático de configuración
+        const timeoutId = setTimeout(() => {
+          loadDashboardData();
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
       }
     }, [loading]),
   );
@@ -77,7 +82,6 @@ export default function DashboardScreen({ navigation }: Props) {
 
       // Obtener días de anticipación configurados (por defecto 7)
       const alertDays = expiryAlertDays ? parseInt(expiryAlertDays, 10) : 7;
-      console.log('Dashboard - Días de anticipación configurados:', alertDays);
       setExpiryAlertDays(alertDays);
 
       // Productos que caducan en los próximos X días (configurable)
@@ -248,7 +252,9 @@ export default function DashboardScreen({ navigation }: Props) {
                     variant="danger"
                     icon="📦"
                   />
-                  <Text style={styles.alertText}>{t.dashboard.lowStock}</Text>
+                  <Text style={styles.alertText}>
+                    {t.dashboard.lowStockDescription}
+                  </Text>
                 </View>
               )}
             </View>

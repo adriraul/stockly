@@ -1,4 +1,3 @@
-import { NativeModules, Platform } from 'react-native';
 import * as Localization from 'expo-localization';
 
 // Tipos para las traducciones
@@ -15,13 +14,19 @@ export interface Translations {
     settings: string;
     expiringSoon: string;
     lowStock: string;
+    lowStockDescription: string;
     products: string;
     units: string;
+    alerts: string;
+    actionRequired: string;
+    inNextDays: string;
+    needRestocking: string;
   };
 
   // Inventario
   inventory: {
     title: string;
+    subtitle: string;
     searchPlaceholder: string;
     noProducts: string;
     addProduct: string;
@@ -50,22 +55,37 @@ export interface Translations {
   // Plantillas
   templates: {
     title: string;
+    subtitle: string;
     searchPlaceholder: string;
     noProducts: string;
     idealQuantity: string;
     addProduct: string;
     save: string;
+    currentStock: string;
+    noCategory: string;
   };
 
   // Lista de compra
   shopping: {
     title: string;
+    subtitle: string;
     noItems: string;
     purchase: string;
     quantity: string;
     confirm: string;
     cancel: string;
     purchased: string;
+    currentStock: string;
+    idealStock: string;
+    needed: string;
+    noCategory: string;
+    expires: string;
+    priority: {
+      high: string;
+      medium: string;
+      low: string;
+      none: string;
+    };
   };
 
   // Configuración
@@ -88,6 +108,7 @@ export interface Translations {
     appInfo: string;
     createdBy: string;
     version: string;
+    expiryAlerts: string;
   };
 
   // Exportar
@@ -107,6 +128,8 @@ export interface Translations {
     generateList: string;
     emptyList: string;
     noLowStock: string;
+    availableToExport: string;
+    needRestocking: string;
   };
 
   // Modal agregar producto
@@ -121,7 +144,10 @@ export interface Translations {
     initialStock: string;
     expiryDate: string;
     add: string;
+    adding: string;
     cancel: string;
+    optional: string;
+    selectDate: string;
   };
 
   // Modal compra
@@ -131,6 +157,17 @@ export interface Translations {
     quantityPlaceholder: string;
     confirm: string;
     cancel: string;
+    description: string;
+    markPurchased: string;
+  };
+
+  // Próximos a caducar
+  expiry: {
+    title: string;
+    subtitle: string;
+    noExpiring: string;
+    expires: string;
+    daysLeft: string;
   };
 
   // Común
@@ -167,6 +204,7 @@ const spanish: Translations = {
     settings: 'Configuración',
     expiringSoon: 'Próximos a caducar',
     lowStock: 'Stock bajo',
+    lowStockDescription: 'Necesitan reposición',
     products: 'Productos',
     units: 'Unidades',
     alerts: 'Alertas',
@@ -212,6 +250,7 @@ const spanish: Translations = {
   },
   shopping: {
     title: 'Lista de Compra',
+    subtitle: 'Productos que necesitas comprar',
     noItems: 'No hay productos para comprar',
     purchase: 'Comprar',
     quantity: 'Cantidad',
@@ -308,7 +347,6 @@ const spanish: Translations = {
     noExpiring: 'No hay productos próximos a caducar',
     expires: 'Caduca',
     daysLeft: 'días restantes',
-    dayLeft: 'día restante',
   },
   common: {
     loading: 'Cargando...',
@@ -343,6 +381,7 @@ const english: Translations = {
     settings: 'Settings',
     expiringSoon: 'Expiring Soon',
     lowStock: 'Low Stock',
+    lowStockDescription: 'Need restocking',
     products: 'Products',
     units: 'Units',
     alerts: 'Alerts',
@@ -484,7 +523,6 @@ const english: Translations = {
     noExpiring: 'No products expiring soon',
     expires: 'Expires',
     daysLeft: 'days left',
-    dayLeft: 'day left',
   },
   common: {
     loading: 'Loading...',
@@ -510,17 +548,10 @@ const english: Translations = {
 const getDeviceLanguage = (): string => {
   try {
     // Intentar obtener el idioma del dispositivo
-    const locale = Localization.locale;
-
-    if (!locale) {
-      const locales = Localization.getLocales();
-      if (locales && locales.length > 0) {
-        return locales[0].languageCode;
-      }
-    }
-
-    if (locale && typeof locale === 'string') {
-      return locale.split('-')[0];
+    const locales = Localization.getLocales();
+    if (locales && locales.length > 0) {
+      const languageCode = locales[0].languageCode;
+      return languageCode || 'es';
     }
 
     return 'es'; // Fallback a español
