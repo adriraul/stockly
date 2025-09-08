@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Badge } from '../components/Badge';
+import { ConsumeModal } from '../components/ConsumeModal';
 import { databaseService } from '../services/database/database';
 import { productsRepository } from '../services/repositories/products';
 import { settingsRepository } from '../services/repositories/settings';
@@ -25,6 +26,8 @@ const ExpiryScreenSimplified: React.FC = () => {
   const [expiringItems, setExpiringItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [expiryAlertDays, setExpiryAlertDays] = useState(7);
+  const [consumeModalVisible, setConsumeModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,7 +50,11 @@ const ExpiryScreenSimplified: React.FC = () => {
       setExpiryAlertDays(alertDays);
 
       // Filtrar productos que caducan en los próximos X días (configurable) o ya caducados
+      // Excluir productos con stock 0
       const expiring = allProducts.filter(product => {
+        // Excluir productos sin stock
+        if (product.currentStock <= 0) return false;
+
         if (!product.expiryDate) return true; // Incluir productos sin fecha
         const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(
           product.expiryDate,
@@ -96,37 +103,86 @@ const ExpiryScreenSimplified: React.FC = () => {
     return { text: `${daysUntilExpiry}d`, variant: 'info' as const };
   };
 
+  const handleConsumeProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setConsumeModalVisible(true);
+  };
+
+  const handleConsume = async (
+    quantity: number,
+    newExpiryDate?: string | null,
+  ) => {
+    if (!selectedProduct) return;
+
+    try {
+      const newStock = selectedProduct.currentStock - quantity;
+
+      // Actualizar el producto con el nuevo stock y fecha de caducidad
+      const updatedProduct = {
+        ...selectedProduct,
+        currentStock: newStock,
+        expiryDate:
+          newExpiryDate !== undefined
+            ? newExpiryDate
+            : selectedProduct.expiryDate,
+      };
+
+      await productsRepository.update(selectedProduct.id, updatedProduct);
+
+      // Recargar la lista
+      await loadExpiringItems();
+
+      Alert.alert(
+        t.common.success,
+        `${quantity} ${
+          t.inventory.units
+        } ${t.consume.markConsumed.toLowerCase()}`,
+      );
+    } catch (error) {
+      console.error('Error consuming product:', error);
+      Alert.alert(t.common.error, 'No se pudo consumir el producto');
+    }
+  };
+
+  const handleCloseConsumeModal = () => {
+    setConsumeModalVisible(false);
+    setSelectedProduct(null);
+  };
+
   const renderExpiringItem = ({ item }: { item: Product }) => {
     const expiryStatus = getExpiryStatus(item.expiryDate);
 
     return (
-      <Card style={styles.itemCard}>
-        <View style={styles.itemHeader}>
-          <Text style={styles.itemName}>{item.name}</Text>
-          <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
-        </View>
-        <View style={styles.itemDetails}>
-          <Text style={styles.itemCategory}>
-            📂 {item.category || t.templates.noCategory}
-          </Text>
-          <Text style={styles.itemStock}>
-            Stock: {item.currentStock} {t.inventory.units}
-          </Text>
-          {item.description && (
-            <Text style={styles.itemDescription}>{item.description}</Text>
-          )}
-        </View>
-        <View style={styles.itemFooter}>
-          <Text style={styles.itemExpiry}>
-            {t.expiry.expires}:{' '}
-            {item.expiryDate
-              ? item.expiryDate.includes('T') || item.expiryDate.includes('-')
-                ? formatDateToDDMMYYYY(item.expiryDate)
-                : item.expiryDate
-              : t.expiry.noDate}
-          </Text>
-        </View>
-      </Card>
+      <TouchableOpacity onPress={() => handleConsumeProduct(item)}>
+        <Card style={styles.itemCard}>
+          <View style={styles.itemHeader}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Badge text={expiryStatus.text} variant={expiryStatus.variant} />
+          </View>
+          <View style={styles.itemDetails}>
+            <Text style={styles.itemCategory}>
+              📂 {item.category || t.templates.noCategory}
+            </Text>
+            <Text style={styles.itemStock}>
+              Stock: {item.currentStock} {t.inventory.units}
+            </Text>
+            {item.description && (
+              <Text style={styles.itemDescription}>{item.description}</Text>
+            )}
+          </View>
+          <View style={styles.itemFooter}>
+            <Text style={styles.itemExpiry}>
+              {t.expiry.expires}:{' '}
+              {item.expiryDate
+                ? item.expiryDate.includes('T') || item.expiryDate.includes('-')
+                  ? formatDateToDDMMYYYY(item.expiryDate)
+                  : item.expiryDate
+                : t.expiry.noDate}
+            </Text>
+            <Text style={styles.consumeHint}>{t.consume.title} →</Text>
+          </View>
+        </Card>
+      </TouchableOpacity>
     );
   };
 
@@ -155,7 +211,8 @@ const ExpiryScreenSimplified: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.title}>{t.expiry.title}</Text>
         <Text style={styles.subtitle}>
-          {expiringItems.length} {t.expiry.subtitle} {expiryAlertDays} días
+          {expiringItems.length}{' '}
+          {t.expiry.subtitle.replace('{days}', expiryAlertDays.toString())}
         </Text>
       </View>
 
@@ -166,6 +223,15 @@ const ExpiryScreenSimplified: React.FC = () => {
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
+      />
+
+      <ConsumeModal
+        visible={consumeModalVisible}
+        onClose={handleCloseConsumeModal}
+        onConsume={handleConsume}
+        productName={selectedProduct?.name || ''}
+        currentStock={selectedProduct?.currentStock || 0}
+        currentExpiryDate={selectedProduct?.expiryDate}
       />
     </View>
   );
@@ -247,11 +313,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
     paddingTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   itemExpiry: {
     fontSize: 12,
     color: '#9ca3af',
-    textAlign: 'center',
+    flex: 1,
+  },
+  consumeHint: {
+    fontSize: 12,
+    color: '#0369a1',
+    fontWeight: '500',
   },
   emptyCard: {
     alignItems: 'center',

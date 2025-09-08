@@ -103,7 +103,8 @@ const TemplateScreenSimplified: React.FC = () => {
     const filtered = products.filter(
       product =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase()) ||
+        (product.category &&
+          product.category.toLowerCase().includes(query.toLowerCase())) ||
         (product.description &&
           product.description.toLowerCase().includes(query.toLowerCase())),
     );

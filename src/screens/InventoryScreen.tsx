@@ -71,7 +71,8 @@ export default function InventoryScreen({ navigation }: Props) {
     const filtered = products.filter(
       product =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase()) ||
+        (product.category &&
+          product.category.toLowerCase().includes(query.toLowerCase())) ||
         (product.description &&
           product.description.toLowerCase().includes(query.toLowerCase())),
     );
@@ -175,9 +176,9 @@ export default function InventoryScreen({ navigation }: Props) {
               <Text style={styles.itemName}>{item.name}</Text>
               <Text style={styles.itemCategory}>
                 📂{' '}
-                 {item.category && item.category !== 'Sin categoría'
-                   ? item.category
-                   : t.templates.noCategory}
+                {item.category && item.category !== 'Sin categoría'
+                  ? item.category
+                  : t.templates.noCategory}
               </Text>
             </View>
             <Badge

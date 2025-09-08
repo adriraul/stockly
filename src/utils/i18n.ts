@@ -178,6 +178,20 @@ export interface Translations {
     markPurchased: string;
   };
 
+  consume: {
+    title: string;
+    quantity: string;
+    quantityPlaceholder: string;
+    expiryDate: string;
+    expiryDatePlaceholder: string;
+    description: string;
+    markConsumed: string;
+    confirm: string;
+    cancel: string;
+    currentStock: string;
+    newExpiryDate: string;
+  };
+
   // Próximos a caducar
   expiry: {
     title: string;
@@ -230,7 +244,7 @@ const spanish: Translations = {
     units: 'Unidades',
     alerts: 'Alertas',
     actionRequired: 'Acción requerida',
-    inNextDays: 'En los próximos días',
+    inNextDays: 'En los próximos {days} días',
     needRestocking: 'Necesitan reposición',
   },
   inventory: {
@@ -377,9 +391,23 @@ const spanish: Translations = {
     confirm: 'Confirmar',
     cancel: 'Cancelar',
   },
+
+  consume: {
+    title: 'Consumir Producto',
+    quantity: 'Cantidad consumida',
+    quantityPlaceholder: '4',
+    expiryDate: 'Fecha de caducidad',
+    expiryDatePlaceholder: 'Seleccionar fecha (opcional)',
+    description: 'Esta cantidad se restará del stock actual del producto',
+    markConsumed: 'Marcar Consumido',
+    confirm: 'Confirmar',
+    cancel: 'Cancelar',
+    currentStock: 'Stock actual',
+    newExpiryDate: 'Nueva fecha de caducidad',
+  },
   expiry: {
     title: 'Próximos a Caducar',
-    subtitle: 'productos caducan en los próximos días',
+    subtitle: 'productos caducan en los próximos {days} días',
     noExpiring: 'No hay productos próximos a caducar',
     expires: 'Caduca',
     daysLeft: 'días restantes',
@@ -426,7 +454,7 @@ const english: Translations = {
     units: 'Units',
     alerts: 'Alerts',
     actionRequired: 'Action required',
-    inNextDays: 'In the next days',
+    inNextDays: 'In the next {days} days',
     needRestocking: 'Need restocking',
   },
   inventory: {
@@ -572,9 +600,24 @@ const english: Translations = {
     confirm: 'Confirm',
     cancel: 'Cancel',
   },
+
+  consume: {
+    title: 'Consume Product',
+    quantity: 'Quantity consumed',
+    quantityPlaceholder: '4',
+    expiryDate: 'Expiry date',
+    expiryDatePlaceholder: 'Select date (optional)',
+    description:
+      'This quantity will be subtracted from the current stock of the product',
+    markConsumed: 'Mark Consumed',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    currentStock: 'Current stock',
+    newExpiryDate: 'New expiry date',
+  },
   expiry: {
     title: 'Expiring Soon',
-    subtitle: 'Expire in the next days',
+    subtitle: 'expire in the next {days} days',
     noExpiring: 'No products expiring soon',
     expires: 'Expires',
     daysLeft: 'days left',

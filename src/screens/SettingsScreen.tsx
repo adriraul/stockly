@@ -41,9 +41,22 @@ const SettingsScreenSimplified: React.FC = () => {
         settingsRepository.get('notificationsEnabled'),
       ]);
 
-      setExpiryAlertDays(expiryDays ? parseInt(expiryDays, 10) : 3);
+      console.log('Loaded settings from database:', {
+        expiryDays,
+        lowStock,
+        notifications,
+      });
+
+      const parsedExpiryDays = expiryDays ? parseInt(expiryDays, 10) : 3;
+      setExpiryAlertDays(parsedExpiryDays);
       setLowStockAlert(lowStock === 'true');
       setNotificationsEnabled(notifications === 'true');
+
+      console.log('Settings loaded:', {
+        parsedExpiryDays,
+        lowStockAlert: lowStock === 'true',
+        notificationsEnabled: notifications === 'true',
+      });
 
       setLoading(false);
     } catch (error) {
@@ -98,6 +111,12 @@ const SettingsScreenSimplified: React.FC = () => {
   // Función para guardar automáticamente sin mostrar alertas
   const autoSave = async () => {
     try {
+      console.log('Auto-saving settings:', {
+        expiryAlertDays,
+        lowStockAlert,
+        notificationsEnabled,
+      });
+
       await Promise.all([
         settingsRepository.set('expiryAlertDays', expiryAlertDays.toString()),
         settingsRepository.set('lowStockAlert', lowStockAlert.toString()),
@@ -106,6 +125,8 @@ const SettingsScreenSimplified: React.FC = () => {
           notificationsEnabled.toString(),
         ),
       ]);
+
+      console.log('Settings saved successfully');
     } catch (error) {
       console.error('Error auto-saving settings:', error);
     }
@@ -136,7 +157,7 @@ const SettingsScreenSimplified: React.FC = () => {
           });
         }, 100);
       };
-    }, []), // Sin dependencias para evitar recreaciones constantes
+    }, [expiryAlertDays, lowStockAlert, notificationsEnabled]), // Incluir dependencias para capturar cambios
   );
 
   if (loading) {

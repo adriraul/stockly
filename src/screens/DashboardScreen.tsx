@@ -68,7 +68,7 @@ export default function DashboardScreen({ navigation }: Props) {
       await loadDashboardData();
     } catch (error) {
       console.error('Error initializing app:', error);
-      
+
       // Si hay un error de base de datos, intentar reinicializar
       if (error instanceof Error && error.message.includes('database')) {
         try {
@@ -170,7 +170,10 @@ export default function DashboardScreen({ navigation }: Props) {
           <StatCard
             title={t.dashboard.expiringSoon}
             value={stats.expiringSoon}
-            subtitle={`${t.dashboard.inNextDays} ${expiryAlertDays} días`}
+            subtitle={`${t.dashboard.inNextDays.replace(
+              '{days}',
+              expiryAlertDays.toString(),
+            )}`}
             icon="⏰"
             color={stats.expiringSoon > 0 ? 'warning' : 'success'}
             delay={0}
@@ -268,7 +271,10 @@ export default function DashboardScreen({ navigation }: Props) {
                     icon="⏰"
                   />
                   <Text style={styles.alertText}>
-                    {t.expiry.subtitle} {expiryAlertDays} días
+                    {t.expiry.subtitle.replace(
+                      '{days}',
+                      expiryAlertDays.toString(),
+                    )}
                   </Text>
                 </View>
               )}
