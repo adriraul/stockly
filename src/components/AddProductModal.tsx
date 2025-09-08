@@ -39,8 +39,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
       return;
     }
 
-    // Categoría es opcional, usar "Sin categoría" si está vacía
-    const category = formData.category.trim() || 'Sin categoría';
+    // Categoría es opcional, usar null si está vacía para que se traduzca en la UI
+    const category = formData.category.trim() || null;
 
     const initialStock = parseInt(formData.initialStock) || 0;
     if (initialStock < 0) {

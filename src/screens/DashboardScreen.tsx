@@ -32,6 +32,7 @@ interface Props {
 interface DashboardStats {
   expiringSoon: number;
   lowStock: number;
+  expired: number;
 }
 
 export default function DashboardScreen({ navigation }: Props) {
@@ -40,6 +41,7 @@ export default function DashboardScreen({ navigation }: Props) {
   const [stats, setStats] = useState<DashboardStats>({
     expiringSoon: 0,
     lowStock: 0,
+    expired: 0,
   });
   const [expiryAlertDays, setExpiryAlertDays] = useState(7);
 
@@ -100,9 +102,19 @@ export default function DashboardScreen({ navigation }: Props) {
         return product.currentStock < template.idealQuantity;
       }).length;
 
+      // Productos ya expirados
+      const expired = products.filter(product => {
+        if (!product.expiryDate) return false;
+        const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(
+          product.expiryDate,
+        );
+        return daysUntilExpiry < 0;
+      }).length;
+
       setStats({
         expiringSoon,
         lowStock,
+        expired,
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -224,7 +236,9 @@ export default function DashboardScreen({ navigation }: Props) {
         </Card>
 
         {/* Alertas */}
-        {(stats.expiringSoon > 0 || stats.lowStock > 0) && (
+        {(stats.expiringSoon > 0 ||
+          stats.lowStock > 0 ||
+          stats.expired > 0) && (
           <Card style={styles.section} variant="outlined">
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>⚠️ {t.dashboard.alerts}</Text>
@@ -257,30 +271,45 @@ export default function DashboardScreen({ navigation }: Props) {
                   </Text>
                 </View>
               )}
+              {stats.expired > 0 && (
+                <View style={styles.alert}>
+                  <Badge
+                    text={`${stats.expired} ${t.dashboard.products}`}
+                    variant="expired"
+                    icon="💀"
+                  />
+                  <Text style={styles.alertText}>
+                    {t.dashboard.expiredDescription}
+                  </Text>
+                </View>
+              )}
             </View>
           </Card>
         )}
 
         {/* Estado vacío */}
-        {stats.expiringSoon === 0 && stats.lowStock === 0 && (
-          <Card style={styles.emptyCard} variant="filled">
-            <Text style={styles.emptyIcon}>🎉</Text>
-            <Text style={styles.emptyTitle}>¡Bienvenido a Stockly!</Text>
-            <Text style={styles.emptyDescription}>
-              Tu asistente personal para gestionar el inventario de alimentos.
-              Comienza agregando tu primer producto y mantén todo organizado.
-            </Text>
-            <Button
-              title="Agregar Primer Producto"
-              onPress={() => handleQuickAction('Inventory')}
-              variant="primary"
-              size="medium"
-              icon="➕"
-              style={styles.emptyButton}
-            />
-          </Card>
-        )}
+        {stats.expiringSoon === 0 &&
+          stats.lowStock === 0 &&
+          stats.expired === 0 && (
+            <Card style={styles.emptyCard} variant="filled">
+              <Text style={styles.emptyIcon}>🎉</Text>
+              <Text style={styles.emptyTitle}>¡Bienvenido a Stockly!</Text>
+              <Text style={styles.emptyDescription}>
+                Tu asistente personal para gestionar el inventario de alimentos.
+                Comienza agregando tu primer producto y mantén todo organizado.
+              </Text>
+              <Button
+                title="Agregar Primer Producto"
+                onPress={() => handleQuickAction('Inventory')}
+                variant="primary"
+                size="medium"
+                icon="➕"
+                style={styles.emptyButton}
+              />
+            </Card>
+          )}
       </View>
+
     </View>
   );
 }

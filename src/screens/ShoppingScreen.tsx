@@ -150,7 +150,10 @@ const ShoppingScreenSimplified: React.FC = () => {
             <View style={styles.itemTitleContainer}>
               <Text style={styles.itemName}>{product.name}</Text>
               <Text style={styles.itemCategory}>
-                📂 {product.category || t.shopping.noCategory}
+                📂{' '}
+                 {product.category && product.category !== 'Sin categoría'
+                   ? product.category
+                   : t.templates.noCategory}
               </Text>
             </View>
             <Badge

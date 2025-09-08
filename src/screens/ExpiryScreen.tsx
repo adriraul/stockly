@@ -46,21 +46,26 @@ const ExpiryScreenSimplified: React.FC = () => {
       const alertDays = expiryAlertDays ? parseInt(expiryAlertDays, 10) : 7;
       setExpiryAlertDays(alertDays);
 
-      // Filtrar productos que caducan en los próximos X días (configurable)
+      // Filtrar productos que caducan en los próximos X días (configurable) o ya caducados
       const expiring = allProducts.filter(product => {
-        if (!product.expiryDate) return false;
+        if (!product.expiryDate) return true; // Incluir productos sin fecha
         const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(
           product.expiryDate,
         );
-        return daysUntilExpiry >= 0 && daysUntilExpiry <= alertDays;
+        // Incluir productos caducados (días negativos) y próximos a caducar
+        return daysUntilExpiry <= alertDays;
       });
 
-      // Ordenar por días hasta caducidad
+      // Ordenar por días hasta caducidad (más caducados primero, sin fecha al final)
       expiring.sort((a, b) => {
-        if (!a.expiryDate || !b.expiryDate) return 0;
+        // Productos sin fecha van al final
+        if (!a.expiryDate && !b.expiryDate) return 0;
+        if (!a.expiryDate) return 1;
+        if (!b.expiryDate) return -1;
+
         const daysA = businessLogicService.getDaysUntilExpiry(a.expiryDate);
         const daysB = businessLogicService.getDaysUntilExpiry(b.expiryDate);
-        return daysA - daysB;
+        return daysA - daysB; // Orden ascendente: más caducados primero
       });
 
       setExpiringItems(expiring);
@@ -75,19 +80,24 @@ const ExpiryScreenSimplified: React.FC = () => {
     }
   };
 
-  const getExpiryStatus = (expiryDate: string) => {
+  const getExpiryStatus = (expiryDate: string | null) => {
+    if (!expiryDate) {
+      return { text: t.expiry.noDate, variant: 'secondary' as const };
+    }
+
     const daysUntilExpiry = businessLogicService.getDaysUntilExpiry(expiryDate);
+
     if (daysUntilExpiry < 0)
-      return { text: 'Caducado', variant: 'danger' as const };
+      return { text: t.expiry.expired, variant: 'danger' as const };
     if (daysUntilExpiry === 0)
-      return { text: 'Hoy', variant: 'danger' as const };
+      return { text: t.expiry.today, variant: 'danger' as const };
     if (daysUntilExpiry <= 3)
       return { text: `${daysUntilExpiry}d`, variant: 'warning' as const };
     return { text: `${daysUntilExpiry}d`, variant: 'info' as const };
   };
 
   const renderExpiringItem = ({ item }: { item: Product }) => {
-    const expiryStatus = getExpiryStatus(item.expiryDate!);
+    const expiryStatus = getExpiryStatus(item.expiryDate);
 
     return (
       <Card style={styles.itemCard}>
@@ -108,7 +118,12 @@ const ExpiryScreenSimplified: React.FC = () => {
         </View>
         <View style={styles.itemFooter}>
           <Text style={styles.itemExpiry}>
-            {t.expiry.expires}: {formatDateToDDMMYYYY(item.expiryDate!)}
+            {t.expiry.expires}:{' '}
+            {item.expiryDate
+              ? item.expiryDate.includes('T') || item.expiryDate.includes('-')
+                ? formatDateToDDMMYYYY(item.expiryDate)
+                : item.expiryDate
+              : t.expiry.noDate}
           </Text>
         </View>
       </Card>

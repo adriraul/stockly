@@ -11,7 +11,8 @@ interface BadgeProps {
     | 'info'
     | 'default'
     | 'primary'
-    | 'secondary';
+    | 'secondary'
+    | 'expired';
   size?: 'small' | 'medium' | 'large';
   style?: ViewStyle;
   icon?: string;
@@ -71,6 +72,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary[500],
     borderWidth: 0,
   },
+  expired: {
+    backgroundColor: '#8B0000' + '20', // Dark red with transparency
+    borderWidth: 1,
+    borderColor: '#8B0000' + '40',
+  },
   default: {
     backgroundColor: theme.colors.neutral[100],
     borderWidth: 1,
@@ -112,6 +118,9 @@ const styles = StyleSheet.create({
   },
   secondaryText: {
     color: theme.colors.text.inverse,
+  },
+  expiredText: {
+    color: '#8B0000', // Dark red
   },
   defaultText: {
     color: theme.colors.text.secondary,

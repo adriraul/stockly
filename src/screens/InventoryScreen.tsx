@@ -173,7 +173,12 @@ export default function InventoryScreen({ navigation }: Props) {
           <View style={styles.itemHeader}>
             <View style={styles.itemTitleContainer}>
               <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemCategory}>📂 {item.category}</Text>
+              <Text style={styles.itemCategory}>
+                📂{' '}
+                 {item.category && item.category !== 'Sin categoría'
+                   ? item.category
+                   : t.templates.noCategory}
+              </Text>
             </View>
             <Badge
               text={expiryStatus.text}
@@ -183,6 +188,8 @@ export default function InventoryScreen({ navigation }: Props) {
                   ? '⚠️'
                   : expiryStatus.variant === 'warning'
                   ? '⏰'
+                  : expiryStatus.variant === 'default'
+                  ? undefined
                   : '✅'
               }
             />
@@ -229,7 +236,8 @@ export default function InventoryScreen({ navigation }: Props) {
           {item.expiryDate && (
             <View style={styles.itemFooter}>
               <Text style={styles.itemExpiry}>
-                🗓️ Caduca: {formatDateToDDMMYYYY(item.expiryDate)}
+                🗓️ {t.inventory.expires}:{' '}
+                {formatDateToDDMMYYYY(item.expiryDate)}
               </Text>
             </View>
           )}

@@ -11,6 +11,7 @@ import {
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { ImportModal } from '../components/ImportModal';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { databaseService } from '../services/database/database';
 import { settingsRepository } from '../services/repositories/settings';
@@ -23,6 +24,7 @@ const SettingsScreenSimplified: React.FC = () => {
   const [lowStockAlert, setLowStockAlert] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [importModalVisible, setImportModalVisible] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -30,7 +32,7 @@ const SettingsScreenSimplified: React.FC = () => {
 
   const loadSettings = async () => {
     try {
-      await databaseService.init();
+      setLoading(true);
 
       // Cargar configuración desde la base de datos
       const [expiryDays, lowStock, notifications] = await Promise.all([
@@ -81,6 +83,18 @@ const SettingsScreenSimplified: React.FC = () => {
     ]);
   };
 
+  const handleImportSuccess = (count: number) => {
+    setImportModalVisible(false);
+    Alert.alert(
+      t.common.success,
+      t.import.importedCount.replace('{count}', count.toString()),
+    );
+  };
+
+  const handleImportError = () => {
+    Alert.alert(t.common.error, 'No se ha podido importar los datos');
+  };
+
   // Función para guardar automáticamente sin mostrar alertas
   const autoSave = async () => {
     try {
@@ -97,17 +111,32 @@ const SettingsScreenSimplified: React.FC = () => {
     }
   };
 
+  // Guardar automáticamente cuando cambien los valores (con debounce)
+  useEffect(() => {
+    if (!loading) {
+      const timeoutId = setTimeout(() => {
+        autoSave().catch(error => {
+          console.error('Error auto-saving settings:', error);
+        });
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [expiryAlertDays, lowStockAlert, notificationsEnabled, loading]);
+
   // Guardar automáticamente al salir de la pantalla
   useFocusEffect(
     useCallback(() => {
       return () => {
         // Esta función se ejecuta cuando el usuario sale de la pantalla
-        // Esperamos a que se complete el guardado antes de continuar
-        autoSave().catch(error => {
-          console.error('Error in auto-save cleanup:', error);
-        });
+        // Usar setTimeout para evitar conflictos con operaciones de base de datos
+        setTimeout(() => {
+          autoSave().catch(error => {
+            console.error('Error in auto-save cleanup:', error);
+          });
+        }, 100);
       };
-    }, [expiryAlertDays, lowStockAlert, notificationsEnabled]),
+    }, []), // Sin dependencias para evitar recreaciones constantes
   );
 
   if (loading) {
@@ -124,97 +153,119 @@ const SettingsScreenSimplified: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t.settings.title}</Text>
-        <Text style={styles.subtitle}>{t.settings.subtitle}</Text>
-      </View>
-
-      <View style={styles.content}>
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.expiryAlerts}</Text>
-
-          <View style={styles.setting}>
-            <Text style={styles.settingLabel}>{t.settings.expiryDays}</Text>
-            <Input
-              value={expiryAlertDays > 0 ? expiryAlertDays.toString() : ''}
-              onChangeText={text => {
-                if (text === '') {
-                  setExpiryAlertDays(0);
-                } else {
-                  const num = parseInt(text) || 0;
-                  if (num >= 0 && num <= 30) {
-                    setExpiryAlertDays(num);
-                  }
-                }
-              }}
-              keyboardType="number-pad"
-              style={styles.numberInput}
-              placeholder="Ej: 3"
-            />
-            <Text style={styles.settingDescription}>
-              {t.settings.expiryDaysDescription}
-            </Text>
-          </View>
-        </Card>
-
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
-
-          <View style={styles.setting}>
-            <View style={styles.switchContainer}>
-              <Text style={styles.settingLabel}>
-                {t.settings.lowStockAlerts}
-              </Text>
-              <Switch
-                value={lowStockAlert}
-                onValueChange={setLowStockAlert}
-                trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
-                thumbColor={lowStockAlert ? '#ffffff' : '#ffffff'}
-              />
-            </View>
-            <Text style={styles.settingDescription}>
-              {t.settings.lowStockAlertsDescription}
-            </Text>
-          </View>
-
-          <View style={styles.setting}>
-            <View style={styles.switchContainer}>
-              <Text style={styles.settingLabel}>
-                {t.settings.notificationsEnabled}
-              </Text>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
-                trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
-                thumbColor={notificationsEnabled ? '#ffffff' : '#ffffff'}
-              />
-            </View>
-            <Text style={styles.settingDescription}>
-              {t.settings.notificationsEnabledDescription}
-            </Text>
-          </View>
-        </Card>
-
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.data}</Text>
-
-          <View style={styles.setting}>
-            <Text style={styles.settingLabel}>{t.settings.appInformation}</Text>
-            <Text style={styles.appInfo}>{t.settings.appInfo}</Text>
-          </View>
-        </Card>
-
-        <View style={styles.actions}>
-          <Button
-            title={t.settings.reset}
-            onPress={handleReset}
-            variant="outline"
-            style={styles.actionButton}
-          />
+    <>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t.settings.title}</Text>
+          <Text style={styles.subtitle}>{t.settings.subtitle}</Text>
         </View>
-      </View>
-    </ScrollView>
+
+        <View style={styles.content}>
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>{t.settings.expiryAlerts}</Text>
+
+            <View style={styles.setting}>
+              <Text style={styles.settingLabel}>{t.settings.expiryDays}</Text>
+              <Input
+                value={expiryAlertDays > 0 ? expiryAlertDays.toString() : ''}
+                onChangeText={text => {
+                  if (text === '') {
+                    setExpiryAlertDays(0);
+                  } else {
+                    const num = parseInt(text) || 0;
+                    if (num >= 0 && num <= 30) {
+                      setExpiryAlertDays(num);
+                    }
+                  }
+                }}
+                keyboardType="number-pad"
+                style={styles.numberInput}
+                placeholder="Ej: 3"
+              />
+              <Text style={styles.settingDescription}>
+                {t.settings.expiryDaysDescription}
+              </Text>
+            </View>
+          </Card>
+
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
+
+            <View style={styles.setting}>
+              <View style={styles.switchContainer}>
+                <Text style={styles.settingLabel}>
+                  {t.settings.lowStockAlerts}
+                </Text>
+                <Switch
+                  value={lowStockAlert}
+                  onValueChange={setLowStockAlert}
+                  trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
+                  thumbColor={lowStockAlert ? '#ffffff' : '#ffffff'}
+                />
+              </View>
+              <Text style={styles.settingDescription}>
+                {t.settings.lowStockAlertsDescription}
+              </Text>
+            </View>
+
+            <View style={styles.setting}>
+              <View style={styles.switchContainer}>
+                <Text style={styles.settingLabel}>
+                  {t.settings.notificationsEnabled}
+                </Text>
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={setNotificationsEnabled}
+                  trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
+                  thumbColor={notificationsEnabled ? '#ffffff' : '#ffffff'}
+                />
+              </View>
+              <Text style={styles.settingDescription}>
+                {t.settings.notificationsEnabledDescription}
+              </Text>
+            </View>
+          </Card>
+
+          <Card style={styles.section}>
+            <Text style={styles.sectionTitle}>{t.settings.data}</Text>
+
+            <View style={styles.setting}>
+              <Text style={styles.settingLabel}>
+                {t.settings.appInformation}
+              </Text>
+              <Text style={styles.appInfo}>{t.settings.appInfo}</Text>
+            </View>
+
+            <View style={styles.setting}>
+              <Button
+                title={t.import.title}
+                onPress={() => setImportModalVisible(true)}
+                variant="outline"
+                style={styles.importButton}
+              />
+              <Text style={styles.settingDescription}>
+                {t.import.description}
+              </Text>
+            </View>
+          </Card>
+
+          <View style={styles.actions}>
+            <Button
+              title={t.settings.reset}
+              onPress={handleReset}
+              variant="outline"
+              style={styles.actionButton}
+            />
+          </View>
+        </View>
+      </ScrollView>
+
+      <ImportModal
+        visible={importModalVisible}
+        onClose={() => setImportModalVisible(false)}
+        onSuccess={handleImportSuccess}
+      />
+    </>
   );
 };
 
@@ -296,6 +347,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '100%',
+  },
+  importButton: {
+    marginBottom: 8,
   },
 });
 

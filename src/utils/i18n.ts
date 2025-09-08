@@ -10,11 +10,12 @@ export interface Translations {
     shoppingList: string;
     idealTemplates: string;
     export: string;
-    expired: string;
     settings: string;
     expiringSoon: string;
     lowStock: string;
     lowStockDescription: string;
+    expired: string;
+    expiredDescription: string;
     products: string;
     units: string;
     alerts: string;
@@ -132,6 +133,22 @@ export interface Translations {
     needRestocking: string;
   };
 
+  // Importar
+  import: {
+    title: string;
+    description: string;
+    placeholder: string;
+    import: string;
+    clear: string;
+    emptyJson: string;
+    invalidFormat: string;
+    invalidJson: string;
+    missingName: string;
+    importedCount: string;
+    partialSuccess: string;
+    errors: string;
+  };
+
   // Modal agregar producto
   addProduct: {
     title: string;
@@ -168,6 +185,9 @@ export interface Translations {
     noExpiring: string;
     expires: string;
     daysLeft: string;
+    noDate: string;
+    expired: string;
+    today: string;
   };
 
   // Común
@@ -200,11 +220,12 @@ const spanish: Translations = {
     shoppingList: 'Lista de Compra',
     idealTemplates: 'Plantillas Ideales',
     export: 'Exportar',
-    expired: 'Caducados',
     settings: 'Configuración',
     expiringSoon: 'Próximos a caducar',
     lowStock: 'Stock bajo',
     lowStockDescription: 'Necesitan reposición',
+    expired: 'Expirados',
+    expiredDescription: 'Ya han caducado',
     products: 'Productos',
     units: 'Unidades',
     alerts: 'Alertas',
@@ -316,6 +337,21 @@ const spanish: Translations = {
     availableToExport: 'disponibles para exportar',
     needRestocking: 'necesitan reposición',
   },
+  import: {
+    title: 'Importar Datos',
+    description:
+      'Pega el JSON con los productos que quieres importar. Solo el nombre es obligatorio.',
+    placeholder: 'Pega aquí tu JSON...',
+    import: 'Importar',
+    clear: 'Limpiar',
+    emptyJson: 'El campo JSON está vacío',
+    invalidFormat: 'El JSON debe ser un array de productos',
+    invalidJson: 'El JSON no es válido',
+    missingName: 'Producto sin nombre',
+    importedCount: '{count} productos insertados',
+    partialSuccess: 'Importación parcial',
+    errors: 'Errores',
+  },
   addProduct: {
     title: 'Agregar Producto',
     name: 'Nombre del Producto',
@@ -347,6 +383,9 @@ const spanish: Translations = {
     noExpiring: 'No hay productos próximos a caducar',
     expires: 'Caduca',
     daysLeft: 'días restantes',
+    noDate: 'Sin fecha',
+    expired: 'Caducado',
+    today: 'Hoy',
   },
   common: {
     loading: 'Cargando...',
@@ -377,11 +416,12 @@ const english: Translations = {
     shoppingList: 'Shopping List',
     idealTemplates: 'Ideal Templates',
     export: 'Export',
-    expired: 'Expired',
     settings: 'Settings',
     expiringSoon: 'Expiring Soon',
     lowStock: 'Low Stock',
     lowStockDescription: 'Need restocking',
+    expired: 'Expired',
+    expiredDescription: 'Already expired',
     products: 'Products',
     units: 'Units',
     alerts: 'Alerts',
@@ -491,6 +531,21 @@ const english: Translations = {
     availableToExport: 'available to export',
     needRestocking: 'need restocking',
   },
+  import: {
+    title: 'Import Data',
+    description:
+      'Paste the JSON with the products you want to import. Only the name is required.',
+    placeholder: 'Paste your JSON here...',
+    import: 'Import',
+    clear: 'Clear',
+    emptyJson: 'The JSON field is empty',
+    invalidFormat: 'The JSON must be an array of products',
+    invalidJson: 'The JSON is not valid',
+    missingName: 'Product without name',
+    importedCount: '{count} products inserted',
+    partialSuccess: 'Partial import',
+    errors: 'Errors',
+  },
   addProduct: {
     title: 'Add Product',
     name: 'Product Name',
@@ -519,10 +574,13 @@ const english: Translations = {
   },
   expiry: {
     title: 'Expiring Soon',
-    subtitle: 'expire in the next days',
+    subtitle: 'Expire in the next days',
     noExpiring: 'No products expiring soon',
     expires: 'Expires',
     daysLeft: 'days left',
+    noDate: 'No date',
+    expired: 'Expired',
+    today: 'Today',
   },
   common: {
     loading: 'Loading...',
@@ -551,13 +609,13 @@ const getDeviceLanguage = (): string => {
     const locales = Localization.getLocales();
     if (locales && locales.length > 0) {
       const languageCode = locales[0].languageCode;
-      return languageCode || 'es';
+      return languageCode || 'en';
     }
 
-    return 'es'; // Fallback a español
+    return 'en'; // Fallback a inglés
   } catch (error) {
     console.warn('Error getting device language:', error);
-    return 'es'; // Fallback a español
+    return 'en'; // Fallback a inglés
   }
 };
 
@@ -569,8 +627,9 @@ export const getTranslations = (): Translations => {
     case 'en':
       return english;
     case 'es':
-    default:
       return spanish;
+    default:
+      return english;
   }
 };
 

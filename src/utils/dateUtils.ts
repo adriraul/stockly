@@ -50,17 +50,27 @@ export const parseDateFromDDMMYYYY = (
 };
 
 /**
- * Convierte una fecha ISO a formato dd/MM/yyyy
- * @param isoString Fecha en formato ISO
+ * Convierte una fecha ISO o dd/MM/yyyy a formato dd/MM/yyyy
+ * @param dateString Fecha en formato ISO o dd/MM/yyyy
  * @returns Fecha en formato dd/MM/yyyy o "Sin fecha" si es inválida
  */
-export const formatDateToDDMMYYYY = (isoString?: string): string => {
-  if (!isoString) {
+export const formatDateToDDMMYYYY = (dateString?: string): string => {
+  if (!dateString) {
     return 'Sin fecha';
   }
 
   try {
-    const date = new Date(isoString);
+    // Si ya está en formato dd/MM/yyyy, devolverlo directamente
+    if (dateString.includes('/') && !dateString.includes('T')) {
+      // Validar que sea formato dd/MM/yyyy
+      const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+      if (dateRegex.test(dateString)) {
+        return dateString;
+      }
+    }
+
+    // Si es formato ISO, convertir a dd/MM/yyyy
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) {
       return 'Sin fecha';
     }
