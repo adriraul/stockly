@@ -9,6 +9,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -37,6 +38,7 @@ interface Props {
 
 export default function InventoryScreen({ navigation }: Props) {
   const t = useTranslations();
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +239,7 @@ export default function InventoryScreen({ navigation }: Props) {
 
           <View style={styles.itemDetails}>
             <Text style={styles.itemDescription}>
-              {item.description || 'Sin descripción'}
+              {item.description || t.inventory.noDescription}
             </Text>
           </View>
 
@@ -290,12 +292,12 @@ export default function InventoryScreen({ navigation }: Props) {
     <Card style={styles.emptyCard} variant="filled">
       <Text style={styles.emptyIcon}>{searchQuery ? '🔍' : '📦'}</Text>
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'No se encontraron productos' : t.inventory.noProducts}
+        {searchQuery ? t.inventory.noSearchResults : t.inventory.noProducts}
       </Text>
       <Text style={styles.emptyDescription}>
         {searchQuery
-          ? 'Intenta con otros términos de búsqueda'
-          : 'Agrega tu primer producto para comenzar a gestionar tu inventario'}
+          ? t.inventory.tryOtherSearchTerms
+          : t.inventory.addFirstProduct}
       </Text>
       {!searchQuery && (
         <Button
@@ -312,7 +314,7 @@ export default function InventoryScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <Text style={styles.title}>📦 {t.inventory.title}</Text>
           <Text style={styles.subtitle}>{t.inventory.subtitle}</Text>
@@ -320,12 +322,12 @@ export default function InventoryScreen({ navigation }: Props) {
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <View style={styles.toggleContainer}>
           <Text style={styles.toggleLabel}>{t.inventory.simpleView}</Text>
@@ -337,11 +339,10 @@ export default function InventoryScreen({ navigation }: Props) {
           />
         </View>
         <Button
-          title={t.common.add}
+          title={t.inventory.addProduct}
           onPress={handleAddProduct}
           variant="primary"
           size="small"
-          icon="➕"
         />
       </View>
       <SearchInput
@@ -365,7 +366,7 @@ export default function InventoryScreen({ navigation }: Props) {
         onClose={() => setShowAddModal(false)}
         onProductAdded={handleProductAdded}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

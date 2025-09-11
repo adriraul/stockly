@@ -241,7 +241,7 @@ const ShoppingScreenSimplified: React.FC = () => {
       <Text style={styles.emptyIcon}>🎉</Text>
       <Text style={styles.emptyTitle}>{t.shopping.noItems}</Text>
       <Text style={styles.emptyDescription}>
-        No hay productos que necesiten reposición. Tu inventario está al día.
+        {t.shopping.inventoryUpToDate}
       </Text>
     </Card>
   );

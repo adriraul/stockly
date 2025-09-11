@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
@@ -24,6 +25,7 @@ import { useTranslations } from '../utils/i18n';
 
 const ExpiryScreenSimplified: React.FC = () => {
   const t = useTranslations();
+  const insets = useSafeAreaInsets();
   const [expiringItems, setExpiringItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [expiryAlertDays, setExpiryAlertDays] = useState(7);
@@ -189,26 +191,26 @@ const ExpiryScreenSimplified: React.FC = () => {
 
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
-      <Text style={styles.emptyTitle}>¡Excelente!</Text>
+      <Text style={styles.emptyTitle}>{t.expiry.excellent}</Text>
       <Text style={styles.emptyDescription}>{t.expiry.noExpiring}</Text>
     </Card>
   );
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.expiry.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Text style={styles.title}>{t.expiry.title}</Text>
         <Text style={styles.subtitle}>
@@ -234,7 +236,7 @@ const ExpiryScreenSimplified: React.FC = () => {
         currentStock={selectedProduct?.currentStock || 0}
         currentExpiryDate={selectedProduct?.expiryDate}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

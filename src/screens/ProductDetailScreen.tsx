@@ -213,7 +213,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 style={styles.input}
                 value={formData.name}
                 onChangeText={text => setFormData({ ...formData, name: text })}
-                placeholder="Leche, Pan, Manzanas..."
+                placeholder={t.product.namePlaceholder}
               />
             ) : (
               <Text style={styles.fieldValue}>{product.name}</Text>
@@ -245,13 +245,13 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChangeText={text =>
                   setFormData({ ...formData, description: text })
                 }
-                placeholder="Leche entera de 1L, Pan integral..."
+                placeholder={t.product.descriptionPlaceholder}
                 multiline
                 numberOfLines={3}
               />
             ) : (
               <Text style={styles.fieldValue}>
-                {product.description || 'Sin descripción'}
+                {product.description || t.product.noDescription}
               </Text>
             )}
           </View>
@@ -275,7 +275,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                 onChange={value =>
                   setFormData({ ...formData, expiryDate: value })
                 }
-                placeholder="Seleccionar fecha (opcional)"
+                placeholder={t.product.selectDateOptional}
               />
             ) : (
               <Text style={styles.fieldValue}>

@@ -22,6 +22,7 @@ export interface Translations {
     actionRequired: string;
     inNextDays: string;
     needRestocking: string;
+    addFirstProduct: string;
   };
 
   // Inventario
@@ -37,6 +38,10 @@ export interface Translations {
     expired: string;
     category: string;
     simpleView: string;
+    noSearchResults: string;
+    tryOtherSearchTerms: string;
+    addProductsToConfigure: string;
+    excellent: string;
   };
 
   // Producto
@@ -52,6 +57,10 @@ export interface Translations {
     delete: string;
     confirmDelete: string;
     deleteMessage: string;
+    namePlaceholder: string;
+    descriptionPlaceholder: string;
+    noDescription: string;
+    selectDateOptional: string;
   };
 
   // Plantillas
@@ -66,6 +75,10 @@ export interface Translations {
     currentStock: string;
     noCategory: string;
     simpleView: string;
+    noDescription: string;
+    noSearchResults: string;
+    tryOtherSearchTerms: string;
+    addFirstProduct: string;
   };
 
   // Lista de compra
@@ -83,6 +96,7 @@ export interface Translations {
     needed: string;
     noCategory: string;
     expires: string;
+    inventoryUpToDate: string;
     urgency: {
       high: string;
       medium: string;
@@ -248,6 +262,7 @@ const spanish: Translations = {
     actionRequired: 'Acción requerida',
     inNextDays: 'En los próximos {days} días',
     needRestocking: 'Necesitan reposición',
+    addFirstProduct: 'Agregar Primer Producto',
   },
   inventory: {
     title: 'Inventario',
@@ -261,6 +276,11 @@ const spanish: Translations = {
     expired: 'Caducado',
     category: 'Categoría',
     simpleView: 'Vista simple',
+    noSearchResults: 'No se encontraron productos',
+    tryOtherSearchTerms: 'Intenta con otros términos de búsqueda',
+    addProductsToConfigure:
+      'Agrega productos en el inventario para configurar sus plantillas ideales. El stock ideal es independiente del stock actual del producto.',
+    excellent: '¡Excelente!',
   },
   product: {
     title: 'Detalles del Producto',
@@ -274,6 +294,10 @@ const spanish: Translations = {
     delete: 'Eliminar',
     confirmDelete: 'Confirmar Eliminación',
     deleteMessage: '¿Estás seguro de que quieres eliminar este producto?',
+    namePlaceholder: 'Leche, Pan, Manzanas...',
+    descriptionPlaceholder: 'Leche entera de 1L, Pan integral...',
+    noDescription: 'Sin descripción',
+    selectDateOptional: 'Seleccionar fecha (opcional)',
   },
   templates: {
     title: 'Plantillas Ideales',
@@ -286,6 +310,11 @@ const spanish: Translations = {
     currentStock: 'Stock actual',
     noCategory: 'Sin categoría',
     simpleView: 'Vista simple',
+    noDescription: 'Sin descripción',
+    noSearchResults: 'No se encontraron productos',
+    tryOtherSearchTerms: 'Intenta con otros términos de búsqueda',
+    addFirstProduct:
+      'Agrega tu primer producto para comenzar a gestionar tu inventario',
   },
   shopping: {
     title: 'Lista de Compra',
@@ -301,6 +330,8 @@ const spanish: Translations = {
     needed: 'Necesitas',
     noCategory: 'Sin categoría',
     expires: 'Caduca',
+    inventoryUpToDate:
+      'No hay productos que necesiten reposición. Tu inventario está al día.',
     urgency: {
       high: 'Urgente',
       medium: 'Media',
@@ -460,6 +491,7 @@ const english: Translations = {
     actionRequired: 'Action required',
     inNextDays: 'In the next {days} days',
     needRestocking: 'Need restocking',
+    addFirstProduct: 'Add First Product',
   },
   inventory: {
     title: 'Inventory',
@@ -473,6 +505,11 @@ const english: Translations = {
     expired: 'Expired',
     category: 'Category',
     simpleView: 'Simple view',
+    noSearchResults: 'No products found',
+    tryOtherSearchTerms: 'Try other search terms',
+    addProductsToConfigure:
+      "Add products to inventory to configure their ideal templates. Ideal stock is independent of the product's current stock.",
+    excellent: 'Excellent!',
   },
   product: {
     title: 'Product Details',
@@ -486,6 +523,10 @@ const english: Translations = {
     delete: 'Delete',
     confirmDelete: 'Confirm Deletion',
     deleteMessage: 'Are you sure you want to delete this product?',
+    namePlaceholder: 'Milk, Bread, Apples...',
+    descriptionPlaceholder: 'Whole milk 1L, Whole grain bread...',
+    noDescription: 'No description',
+    selectDateOptional: 'Select date (optional)',
   },
   templates: {
     title: 'Ideal Templates',
@@ -498,6 +539,10 @@ const english: Translations = {
     currentStock: 'Current stock',
     noCategory: 'No category',
     simpleView: 'Simple view',
+    noDescription: 'No description',
+    noSearchResults: 'No products found',
+    tryOtherSearchTerms: 'Try other search terms',
+    addFirstProduct: 'Add your first product to start managing your inventory',
   },
   shopping: {
     title: 'Shopping List',
@@ -513,6 +558,8 @@ const english: Translations = {
     needed: 'You need',
     noCategory: 'No category',
     expires: 'Expires',
+    inventoryUpToDate:
+      'No products need restocking. Your inventory is up to date.',
     urgency: {
       high: 'Urgent',
       medium: 'Medium',

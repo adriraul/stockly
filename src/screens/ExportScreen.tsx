@@ -98,7 +98,7 @@ const ExportScreenSimplified: React.FC = () => {
 
       await Share.share({
         message: jsonData,
-        title: 'Exportar Inventario',
+        title: t.export.exportInventory,
         url: `data:application/json;base64,${btoa(jsonData)}`,
       });
     } catch (error) {
@@ -132,7 +132,7 @@ const ExportScreenSimplified: React.FC = () => {
 
       await Share.share({
         message: fullText,
-        title: 'Lista de Compra',
+        title: t.export.shoppingList,
       });
     } catch (error) {
       console.error('Error exporting shopping list:', error);
@@ -157,9 +157,7 @@ const ExportScreenSimplified: React.FC = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t.export.title}</Text>
-        <Text style={styles.subtitle}>
-          {t.export.subtitle}
-        </Text>
+        <Text style={styles.subtitle}>{t.export.subtitle}</Text>
       </View>
 
       <View style={styles.content}>
@@ -170,7 +168,8 @@ const ExportScreenSimplified: React.FC = () => {
             {t.export.exportInventoryDescription}
           </Text>
           <Text style={styles.statsText}>
-            {products.length} {t.export.products.toLowerCase()} {t.export.availableToExport}
+            {products.length} {t.export.products.toLowerCase()}{' '}
+            {t.export.availableToExport}
           </Text>
           <Button
             title={t.export.exportJson}
@@ -187,7 +186,8 @@ const ExportScreenSimplified: React.FC = () => {
             {t.export.shoppingListDescription}
           </Text>
           <Text style={styles.statsText}>
-            {generateShoppingList().length} {t.export.products.toLowerCase()} {t.export.needRestocking}
+            {generateShoppingList().length} {t.export.products.toLowerCase()}{' '}
+            {t.export.needRestocking}
           </Text>
           <Button
             title={t.export.generateList}

@@ -9,6 +9,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
@@ -25,6 +26,7 @@ import { useTranslations } from '../utils/i18n';
 
 const TemplateScreenSimplified: React.FC = () => {
   const t = useTranslations();
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
@@ -228,12 +230,12 @@ const TemplateScreenSimplified: React.FC = () => {
   const renderEmptyState = () => (
     <Card style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'No se encontraron productos' : t.templates.noProducts}
+        {searchQuery ? t.templates.noSearchResults : t.templates.noProducts}
       </Text>
       <Text style={styles.emptyDescription}>
         {searchQuery
-          ? 'Intenta con otros términos de búsqueda'
-          : 'Agrega productos en el inventario para configurar sus plantillas ideales. El stock ideal es independiente del stock actual del producto.'}
+          ? t.templates.tryOtherSearchTerms
+          : t.templates.addProductsToConfigure}
       </Text>
       {!searchQuery && (
         <Button
@@ -247,19 +249,19 @@ const TemplateScreenSimplified: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.templates.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <View style={styles.toggleContainer}>
           <Text style={styles.toggleLabel}>{t.templates.simpleView}</Text>
@@ -300,7 +302,7 @@ const TemplateScreenSimplified: React.FC = () => {
         onClose={() => setShowAddModal(false)}
         onProductAdded={handleProductAdded}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

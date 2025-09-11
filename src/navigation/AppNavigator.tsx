@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar, View, Text, StyleSheet } from 'react-native';
+import { StatusBar, View, Text, StyleSheet, Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 import { useTranslations } from '../utils/i18n';
@@ -86,11 +86,7 @@ const AppNavigator: React.FC = () => {
             name="Dashboard"
             component={DashboardScreen}
             options={{
-              title: '🥩 Stockly',
-              headerStyle: {
-                backgroundColor: theme.colors.primary[600],
-              },
-              headerTitleAlign: 'center',
+              headerShown: false,
             }}
           />
           <Stack.Screen
@@ -147,5 +143,18 @@ const AppNavigator: React.FC = () => {
     </SafeAreaProvider>
   );
 };
+
+const styles = StyleSheet.create({
+  headerLeftContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  dashboardHeaderLogo: {
+    height: 60,
+    width: 200,
+  },
+});
 
 export default AppNavigator;

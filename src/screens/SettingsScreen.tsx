@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -21,6 +22,7 @@ import { useTranslations } from '../utils/i18n';
 const SettingsScreenSimplified: React.FC = () => {
   const t = useTranslations();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [expiryAlertDays, setExpiryAlertDays] = useState(3);
   const [lowStockAlert, setLowStockAlert] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -175,7 +177,7 @@ const SettingsScreenSimplified: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <ScrollView>
         <View style={styles.header}>
           <Text style={styles.title}>{t.settings.title}</Text>
@@ -246,7 +248,6 @@ const SettingsScreenSimplified: React.FC = () => {
                 {t.settings.notificationsEnabledDescription}
               </Text>
             </View>
-
           </Card>
 
           <Card style={styles.section}>
@@ -288,7 +289,7 @@ const SettingsScreenSimplified: React.FC = () => {
         onClose={() => setImportModalVisible(false)}
         onSuccess={handleImportSuccess}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

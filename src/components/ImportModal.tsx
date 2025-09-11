@@ -190,45 +190,52 @@ export const ImportModal: React.FC<ImportModalProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={styles.container}>
-              <Text style={styles.description}>{t.import.description}</Text>
+            <ScrollView 
+              style={styles.scrollContainer}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.container}>
+                <Text style={styles.description}>{t.import.description}</Text>
 
-              <View style={styles.jsonContainer}>
-                <TextInput
-                  style={styles.jsonInput}
-                  value={jsonText}
-                  onChangeText={setJsonText}
-                  placeholder={t.import.placeholder}
-                  multiline
-                  textAlignVertical="top"
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-              </View>
+                <View style={styles.jsonContainer}>
+                  <TextInput
+                    style={styles.jsonInput}
+                    value={jsonText}
+                    onChangeText={setJsonText}
+                    placeholder={t.import.placeholder}
+                    multiline
+                    textAlignVertical="top"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                  />
+                </View>
 
-              <View style={styles.buttons}>
+                <View style={styles.buttons}>
+                  <Button
+                    title={t.import.clear}
+                    onPress={handleClear}
+                    variant="outline"
+                    style={styles.button}
+                  />
+                  <Button
+                    title={t.import.import}
+                    onPress={handleImport}
+                    variant="primary"
+                    style={styles.button}
+                    loading={loading}
+                  />
+                </View>
+
                 <Button
-                  title={t.import.clear}
-                  onPress={handleClear}
+                  title={t.common.cancel}
+                  onPress={handleCancel}
                   variant="outline"
-                  style={styles.button}
-                />
-                <Button
-                  title={t.import.import}
-                  onPress={handleImport}
-                  variant="primary"
-                  style={styles.button}
-                  loading={loading}
+                  style={styles.cancelButton}
                 />
               </View>
-
-              <Button
-                title={t.common.cancel}
-                onPress={handleCancel}
-                variant="outline"
-                style={styles.cancelButton}
-              />
-            </View>
+            </ScrollView>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -288,6 +295,12 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   container: {
     flex: 1,
