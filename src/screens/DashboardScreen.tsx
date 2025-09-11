@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -145,7 +146,7 @@ export default function DashboardScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Logo size={80} style={styles.logo} />
           <Text style={styles.subtitle}>{t.dashboard.subtitle}</Text>
@@ -153,15 +154,22 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Logo size={80} style={styles.logo} />
-        <Text style={styles.subtitle}>{t.dashboard.subtitle}</Text>
+        <Text
+          style={[
+            styles.subtitle,
+            { color: theme.colors.text.secondary },
+          ]}
+        >
+          {t.dashboard.subtitle}
+        </Text>
       </View>
 
       <View style={styles.content}>
@@ -328,14 +336,14 @@ export default function DashboardScreen({ navigation }: Props) {
             </Card>
           )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background.secondary,
+    backgroundColor: '#f8fafc',
   },
   header: {
     paddingHorizontal: theme.spacing.md,

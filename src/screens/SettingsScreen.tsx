@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -174,8 +175,8 @@ const SettingsScreenSimplified: React.FC = () => {
   }
 
   return (
-    <>
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
         <View style={styles.header}>
           <Text style={styles.title}>{t.settings.title}</Text>
           <Text style={styles.subtitle}>{t.settings.subtitle}</Text>
@@ -245,6 +246,7 @@ const SettingsScreenSimplified: React.FC = () => {
                 {t.settings.notificationsEnabledDescription}
               </Text>
             </View>
+
           </Card>
 
           <Card style={styles.section}>
@@ -286,7 +288,7 @@ const SettingsScreenSimplified: React.FC = () => {
         onClose={() => setImportModalVisible(false)}
         onSuccess={handleImportSuccess}
       />
-    </>
+    </SafeAreaView>
   );
 };
 

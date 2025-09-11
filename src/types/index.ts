@@ -1,7 +1,7 @@
 export interface Product {
   id: string;
   name: string;
-  category: string;
+  category: string | null;
   description?: string;
   currentStock: number;
   expiryDate?: string;

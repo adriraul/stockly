@@ -36,6 +36,7 @@ export interface Translations {
     expiringSoon: string;
     expired: string;
     category: string;
+    simpleView: string;
   };
 
   // Producto
@@ -64,6 +65,7 @@ export interface Translations {
     save: string;
     currentStock: string;
     noCategory: string;
+    simpleView: string;
   };
 
   // Lista de compra
@@ -81,7 +83,7 @@ export interface Translations {
     needed: string;
     noCategory: string;
     expires: string;
-    priority: {
+    urgency: {
       high: string;
       medium: string;
       low: string;
@@ -258,6 +260,7 @@ const spanish: Translations = {
     expiringSoon: 'Próximo a caducar',
     expired: 'Caducado',
     category: 'Categoría',
+    simpleView: 'Vista simple',
   },
   product: {
     title: 'Detalles del Producto',
@@ -282,6 +285,7 @@ const spanish: Translations = {
     save: 'Guardar',
     currentStock: 'Stock actual',
     noCategory: 'Sin categoría',
+    simpleView: 'Vista simple',
   },
   shopping: {
     title: 'Lista de Compra',
@@ -297,11 +301,11 @@ const spanish: Translations = {
     needed: 'Necesitas',
     noCategory: 'Sin categoría',
     expires: 'Caduca',
-    priority: {
-      high: 'Alta',
+    urgency: {
+      high: 'Urgente',
       medium: 'Media',
       low: 'Baja',
-      none: 'Sin prioridad',
+      none: 'Normal',
     },
   },
   settings: {
@@ -468,6 +472,7 @@ const english: Translations = {
     expiringSoon: 'Expiring soon',
     expired: 'Expired',
     category: 'Category',
+    simpleView: 'Simple view',
   },
   product: {
     title: 'Product Details',
@@ -492,6 +497,7 @@ const english: Translations = {
     save: 'Save',
     currentStock: 'Current stock',
     noCategory: 'No category',
+    simpleView: 'Simple view',
   },
   shopping: {
     title: 'Shopping List',
@@ -507,11 +513,11 @@ const english: Translations = {
     needed: 'You need',
     noCategory: 'No category',
     expires: 'Expires',
-    priority: {
-      high: 'High',
+    urgency: {
+      high: 'Urgent',
       medium: 'Medium',
       low: 'Low',
-      none: 'No priority',
+      none: 'Normal',
     },
   },
   settings: {

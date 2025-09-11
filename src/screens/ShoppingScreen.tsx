@@ -24,6 +24,7 @@ interface ShoppingItem {
   product: Product;
   template: TemplateItem;
   needed: number;
+  urgency: 'high' | 'medium' | 'low' | 'none';
 }
 
 const ShoppingScreenSimplified: React.FC = () => {
@@ -68,13 +69,17 @@ const ShoppingScreenSimplified: React.FC = () => {
         })
         .filter(Boolean) as ShoppingItem[];
 
-      // Ordenar por prioridad
-      items.sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return (
-          priorityOrder[b.template.priority] -
-          priorityOrder[a.template.priority]
+      // Calcular urgencia y ordenar por urgencia (de más urgente a menos)
+      items.forEach(item => {
+        item.urgency = calculateUrgency(
+          item.product,
+          item.template.idealQuantity,
         );
+      });
+
+      items.sort((a, b) => {
+        const urgencyOrder = { high: 4, medium: 3, low: 2, none: 1 };
+        return urgencyOrder[b.urgency] - urgencyOrder[a.urgency];
       });
 
       setShoppingItems(items);
@@ -111,29 +116,45 @@ const ShoppingScreenSimplified: React.FC = () => {
     setPurchaseModal({ visible: true, item });
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
+  const calculateUrgency = (
+    product: Product,
+    idealQuantity: number,
+  ): 'high' | 'medium' | 'low' | 'none' => {
+    const stockRatio = product.currentStock / idealQuantity;
+
+    if (stockRatio <= 0.25) return 'high'; // ≤ 25% del ideal (rojo)
+    if (stockRatio <= 0.5) return 'medium'; // 26-50% del ideal (amarillo)
+    if (stockRatio <= 0.75) return 'low'; // 51-75% del ideal (azul)
+    return 'none'; // >75% del ideal (gris)
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency) {
       case 'high':
-        return '#dc2626';
+        return '#dc2626'; // Rojo
       case 'medium':
-        return '#f59e0b';
+        return '#f59e0b'; // Amarillo
       case 'low':
-        return '#059669';
+        return '#3b82f6'; // Azul
+      case 'none':
+        return '#6b7280'; // Gris
       default:
         return '#6b7280';
     }
   };
 
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
+  const getUrgencyText = (urgency: string) => {
+    switch (urgency) {
       case 'high':
-        return t.shopping.priority.high;
+        return t.shopping.urgency.high;
       case 'medium':
-        return t.shopping.priority.medium;
+        return t.shopping.urgency.medium;
       case 'low':
-        return t.shopping.priority.low;
+        return t.shopping.urgency.low;
+      case 'none':
+        return t.shopping.urgency.none;
       default:
-        return t.shopping.priority.none;
+        return t.shopping.urgency.none;
     }
   };
 
@@ -151,26 +172,30 @@ const ShoppingScreenSimplified: React.FC = () => {
               <Text style={styles.itemName}>{product.name}</Text>
               <Text style={styles.itemCategory}>
                 📂{' '}
-                 {product.category && product.category !== 'Sin categoría'
-                   ? product.category
-                   : t.templates.noCategory}
+                {product.category && product.category !== 'Sin categoría'
+                  ? product.category
+                  : t.templates.noCategory}
               </Text>
             </View>
             <Badge
-              text={getPriorityText(template.priority)}
+              text={getUrgencyText(item.urgency)}
               variant={
-                template.priority === 'high'
+                item.urgency === 'high'
                   ? 'danger'
-                  : template.priority === 'medium'
+                  : item.urgency === 'medium'
                   ? 'warning'
-                  : 'info'
+                  : item.urgency === 'low'
+                  ? 'info'
+                  : 'secondary'
               }
               icon={
-                template.priority === 'high'
-                  ? '🔥'
-                  : template.priority === 'medium'
-                  ? '⚡'
-                  : '📝'
+                item.urgency === 'high'
+                  ? '🚨'
+                  : item.urgency === 'medium'
+                  ? '⚠️'
+                  : item.urgency === 'low'
+                  ? 'ℹ️'
+                  : '✅'
               }
             />
           </View>

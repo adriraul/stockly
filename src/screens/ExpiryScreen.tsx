@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
@@ -195,19 +196,19 @@ const ExpiryScreenSimplified: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.expiry.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t.expiry.title}</Text>
         <Text style={styles.subtitle}>
@@ -233,7 +234,7 @@ const ExpiryScreenSimplified: React.FC = () => {
         currentStock={selectedProduct?.currentStock || 0}
         currentExpiryDate={selectedProduct?.expiryDate}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

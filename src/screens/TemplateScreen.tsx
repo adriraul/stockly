@@ -6,7 +6,9 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Switch,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Card } from '../components/Card';
@@ -32,6 +34,7 @@ const TemplateScreenSimplified: React.FC = () => {
   const [idealQuantities, setIdealQuantities] = useState<
     Record<string, string>
   >({});
+  const [simpleView, setSimpleView] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,6 +167,27 @@ const TemplateScreenSimplified: React.FC = () => {
       idealQuantityString === '' ? 0 : parseInt(idealQuantityString) || 0;
     const isLowStock = item.currentStock < idealQuantity;
 
+    if (simpleView) {
+      return (
+        <Card style={styles.simpleItemCard}>
+          <View style={styles.simpleItemContent}>
+            <Text style={styles.simpleItemName}>{item.name}</Text>
+            <View style={styles.simpleQuantitySection}>
+              <Text style={styles.simpleQuantityLabel}>Ideal:</Text>
+              <Input
+                value={idealQuantityString}
+                onChangeText={text => handleQuantityChange(item.id, text)}
+                onBlur={() => handleQuantityBlur(item.id)}
+                keyboardType="number-pad"
+                style={styles.simpleQuantityInput}
+                placeholder=""
+              />
+            </View>
+          </View>
+        </Card>
+      );
+    }
+
     return (
       <Card style={styles.itemCard}>
         <View style={styles.itemHeader}>
@@ -223,21 +247,29 @@ const TemplateScreenSimplified: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.templates.title}</Text>
         </View>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>{t.common.loading}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t.templates.title}</Text>
+        <View style={styles.toggleContainer}>
+          <Text style={styles.toggleLabel}>{t.templates.simpleView}</Text>
+          <Switch
+            value={simpleView}
+            onValueChange={setSimpleView}
+            trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
+            thumbColor={simpleView ? '#ffffff' : '#ffffff'}
+          />
+        </View>
         <Button
           title={t.templates.addProduct}
           onPress={() => setShowAddModal(true)}
@@ -268,7 +300,7 @@ const TemplateScreenSimplified: React.FC = () => {
         onClose={() => setShowAddModal(false)}
         onProductAdded={handleProductAdded}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -282,7 +314,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 8,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
@@ -393,6 +425,60 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  // Simple view styles
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  toggleLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  simpleItemCard: {
+    marginBottom: 8,
+    padding: 12,
+  },
+  simpleItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 40,
+  },
+  simpleItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    flex: 1,
+    marginRight: 12,
+  },
+  simpleQuantitySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  simpleQuantityLabel: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  simpleQuantityInput: {
+    width: 80,
+    height: 40,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlignVertical: 'center',
+    paddingVertical: 0,
+    marginVertical: 0,
   },
 });
 

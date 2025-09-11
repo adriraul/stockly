@@ -92,7 +92,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     try {
       const updates: Partial<Product> = {
         name: formData.name.trim(),
-        category: formData.category.trim(),
+        category: formData.category ? formData.category.trim() : null,
         description: formData.description.trim() || undefined,
         expiryDate: parsedExpiryDate,
       };

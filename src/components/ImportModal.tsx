@@ -6,9 +6,12 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Dimensions,
+  Modal as RNModal,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-
-import { Modal } from './Modal';
 import { Button } from './Button';
 import { useTranslations } from '../utils/i18n';
 import { productsRepository } from '../services/repositories/products';
@@ -164,61 +167,131 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} onClose={handleCancel}>
-      <View style={styles.container}>
-        <Text style={styles.title}>{t.import.title}</Text>
-        <Text style={styles.description}>{t.import.description}</Text>
+    <RNModal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleCancel}
+    >
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.overlayContent}>
+          <View style={styles.modalContainer}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{t.import.title}</Text>
+              <TouchableOpacity
+                onPress={handleCancel}
+                style={styles.closeButton}
+              >
+                <Text style={styles.closeText}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-        <ScrollView style={styles.jsonContainer}>
-          <TextInput
-            style={styles.jsonInput}
-            value={jsonText}
-            onChangeText={setJsonText}
-            placeholder={t.import.placeholder}
-            multiline
-            textAlignVertical="top"
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
-        </ScrollView>
+            <View style={styles.container}>
+              <Text style={styles.description}>{t.import.description}</Text>
 
-        <View style={styles.buttons}>
-          <Button
-            title={t.import.clear}
-            onPress={handleClear}
-            variant="outline"
-            style={styles.button}
-          />
-          <Button
-            title={t.import.import}
-            onPress={handleImport}
-            variant="primary"
-            style={styles.button}
-            loading={loading}
-          />
+              <View style={styles.jsonContainer}>
+                <TextInput
+                  style={styles.jsonInput}
+                  value={jsonText}
+                  onChangeText={setJsonText}
+                  placeholder={t.import.placeholder}
+                  multiline
+                  textAlignVertical="top"
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.buttons}>
+                <Button
+                  title={t.import.clear}
+                  onPress={handleClear}
+                  variant="outline"
+                  style={styles.button}
+                />
+                <Button
+                  title={t.import.import}
+                  onPress={handleImport}
+                  variant="primary"
+                  style={styles.button}
+                  loading={loading}
+                />
+              </View>
+
+              <Button
+                title={t.common.cancel}
+                onPress={handleCancel}
+                variant="outline"
+                style={styles.cancelButton}
+              />
+            </View>
+          </View>
         </View>
-
-        <Button
-          title={t.common.cancel}
-          onPress={handleCancel}
-          variant="outline"
-          style={styles.cancelButton}
-        />
-      </View>
-    </Modal>
+      </KeyboardAvoidingView>
+    </RNModal>
   );
 };
 
+const { height: screenHeight } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlayContent: {
+    width: '100%',
+    height: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
-    maxHeight: '80%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    color: '#1f2937',
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeText: {
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  container: {
+    flex: 1,
+    padding: 20,
   },
   description: {
     fontSize: 14,
@@ -228,17 +301,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   jsonContainer: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     marginBottom: 15,
-    maxHeight: 200,
+    minHeight: screenHeight * 0.4,
   },
   jsonInput: {
+    flex: 1,
     padding: 12,
     fontSize: 12,
     fontFamily: 'monospace',
-    minHeight: 150,
+    textAlignVertical: 'top',
   },
   buttons: {
     flexDirection: 'row',

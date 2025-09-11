@@ -6,7 +6,9 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Switch,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -40,6 +42,7 @@ export default function InventoryScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [simpleView, setSimpleView] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,6 +167,42 @@ export default function InventoryScreen({ navigation }: Props) {
   const renderProductItem = ({ item }: { item: Product }) => {
     const expiryStatus = getExpiryStatus(item.expiryDate);
 
+    if (simpleView) {
+      return (
+        <TouchableOpacity
+          onPress={() => handleProductPress(item)}
+          style={styles.itemContainer}
+          activeOpacity={0.7}
+        >
+          <Card style={styles.simpleItemCard} variant="elevated">
+            <View style={styles.simpleItemContent}>
+              <Text style={styles.simpleItemName}>{item.name}</Text>
+              <View style={styles.simpleStockControls}>
+                <TouchableOpacity
+                  onPress={() => handleRemoveStock(item)}
+                  style={styles.simpleStockButton}
+                  disabled={item.currentStock <= 0}
+                >
+                  <Text style={styles.simpleStockButtonText}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.simpleStockDisplay}>
+                  <Text style={styles.simpleStockNumber}>
+                    {item.currentStock}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleAddStock(item)}
+                  style={styles.simpleStockButton}
+                >
+                  <Text style={styles.simpleStockButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Card>
+        </TouchableOpacity>
+      );
+    }
+
     return (
       <TouchableOpacity
         onPress={() => handleProductPress(item)}
@@ -273,7 +312,7 @@ export default function InventoryScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>📦 {t.inventory.title}</Text>
           <Text style={styles.subtitle}>{t.inventory.subtitle}</Text>
@@ -281,22 +320,27 @@ export default function InventoryScreen({ navigation }: Props) {
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>🔄 {t.common.loading}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>📦 {t.inventory.title}</Text>
-          <Text style={styles.subtitle}>{t.inventory.subtitle}</Text>
+        <View style={styles.toggleContainer}>
+          <Text style={styles.toggleLabel}>{t.inventory.simpleView}</Text>
+          <Switch
+            value={simpleView}
+            onValueChange={setSimpleView}
+            trackColor={{ false: '#e2e8f0', true: '#0369a1' }}
+            thumbColor={simpleView ? '#ffffff' : '#ffffff'}
+          />
         </View>
         <Button
           title={t.common.add}
           onPress={handleAddProduct}
           variant="primary"
-          size="medium"
+          size="small"
           icon="➕"
         />
       </View>
@@ -321,7 +365,7 @@ export default function InventoryScreen({ navigation }: Props) {
         onClose={() => setShowAddModal(false)}
         onProductAdded={handleProductAdded}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -335,14 +379,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
     backgroundColor: theme.colors.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.neutral[200],
     ...theme.shadows.sm,
-  },
-  headerContent: {
-    flex: 1,
   },
   title: {
     fontSize: theme.typography.fontSize['2xl'],
@@ -499,5 +540,64 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     paddingHorizontal: theme.spacing.xl,
+  },
+  // Simple view styles
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
+  toggleLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeight.medium,
+  },
+  simpleItemCard: {
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  simpleItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  simpleItemName: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  simpleStockControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  simpleStockButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  simpleStockButtonText: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.white,
+  },
+  simpleStockDisplay: {
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  simpleStockNumber: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
   },
 });
